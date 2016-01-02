@@ -1,0 +1,5 @@
+Z x=11+22*(78-90)+12/(2-3)
+
+Pointers p,y
+Element e="Alexey"
+print e, p, y, x
