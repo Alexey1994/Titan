@@ -1,0 +1,357 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "parser.h"
+#include "interpretator.h"
+#include "lexer.h"
+#include "expression.h"
+#include "String.h"
+#include "parser_free.h"
+#include "time.h"
+#include "C.h"
+
+char debug=0;
+
+void free_test()
+{
+    Tree *tree=0;
+    char data[]={
+                 VAR_INIT, 'n',0,
+                 VAR_INIT, 'm',0,
+                 VAR_INIT, 't',0,
+                 ARRAY_INIT, 'g',0,
+                 ELEMENT_INIT, 'e',0,
+                 PTRS_INIT, 'p',0,
+                 CONST_STRING_INIT, 'z',0, 3,0,0,0, 't','l','l',
+                 CONST_INIT, 'c',0, 1,0,0,0,
+                 CONST_INIT, '0',0, 0,0,0,1,
+
+                 ASSIGNMENT, 'n',0, 'c',0,
+                 ASSIGNMENT, 'm',0, '0',0,
+                 ASSIGNMENT, 'e',0, 'e',0,
+
+                 PUTC, 'n',0,
+
+                 LOOP,
+                    EQ, 't',0, 'm',0, 'n',0,
+                    IF, 't',0,
+                        BREAK,
+                    END,
+                    INC, 'n',0,
+                 END,
+
+                 INC, 'n',0,
+
+                 IF, 'n',0,
+                    ASSIGNMENT, 'm',0, '0',0,
+                 END,
+
+                 FUNCTION, 'a',0,
+                    FUNCTION, 'o',0,
+                        VAR_INIT, 'l',0,
+                    END,
+                 END,
+
+                 EQ, 't',0, 'm',0, 'n',0,
+
+                 CALL, 'a',0
+                };
+
+    size_data=sizeof(data);
+
+    String *s=str_init("");
+
+    while(1)
+    {
+        int g;
+        for(g=size_data-1; g>=0; g--)
+            str_push(s, data[g]);
+        tree=parse(s);
+
+        parser_free_functions(tree);
+        str_clear(s);
+    }
+}
+
+void power_test()
+{
+    Tree *tree=0;
+    int start;
+
+    char data[]={
+                 VAR_INIT, 'i',0,
+                 VAR_INIT, 't',0,
+                 VAR_INIT, 'v',0,
+                 CONST_INIT, 's',0, 0,0,0,1,
+                 CONST_INIT, '0',0, 0,0,0,0,
+
+                 ASSIGNMENT, 'i',0, '0',0,
+                 ASSIGNMENT, 't',0, 's',0,
+
+                 ASSIGNMENT, 'v',0, 's',0,
+
+                 LOOP,
+                    EQ, 'v',0, 't',0, 'i',0,
+                    INC, 'i',0,
+                    IF, 'v',0,
+                        BREAK,
+                        PUTC, 'v',0,
+                    END,
+                 END,
+
+                 PUTC, 'i',0
+                };
+    size_data=sizeof(data);
+
+    String *s=str_init("");
+
+    printf("\nparser:\n\n");
+
+    int g;
+    for(g=size_data-1; g>=0; g--)
+        str_push(s, data[g]);
+    tree=parse(s);
+
+    printf("\ninterpretator:\n\n");
+
+    start=time(0);
+    if(tree)
+        run(tree);
+    else
+        printf("error");
+    printf("\n%d seconds", (time(0)-start));
+}
+
+void if_test()
+{
+    Tree *tree=0;
+
+    interpretator_table_init();
+
+    char data[]={
+                 CONST_INIT, 'c',0, 1,0,0,0,
+                 VAR_INIT, 's',0,
+
+                 ASSIGNMENT, 's',0, 'c',0,
+
+                 IF, 's',0,
+                    PUTC, 'c',0,
+                 END,
+
+                 LOOP,
+                    BREAK,
+                    CONTINUE,
+                    PUTC, 's',0,
+                 END,
+
+/*
+                 FUNCTION, 'a',0,
+                 END,
+
+                 CALL, 'a',0,*/
+
+                 INC, 's',0
+                };
+    size_data=sizeof(data);
+
+    String *s=str_init("");
+
+    printf("\nparser:\n\n");
+
+    int g;
+    for(g=size_data-1; g>=0; g--)
+        str_push(s, data[g]);
+    tree=parse(s);
+
+    printf("\ninterpretator:\n\n");
+
+    if(tree)
+        run(tree);
+    else
+        printf("error");
+}
+
+void c_test()
+{
+    Tree *tree=0;
+
+    interpretator_table_init();
+
+    char data[]={
+                 CONST_INIT, 'c',0, 1,0,0,0,
+                 CONST_INIT, 'd',0, 2,0,0,0,
+                 VAR_INIT, 's',0,
+
+                 ASSIGNMENT, 's',0, 'c',0,
+
+/*
+                 FUNCTION, 'a',0,
+                 END,
+
+                 CALL, 'a',0,*/
+
+                 INC, 's',0,
+                 MUL, 's',0, 's',0, 's',0,
+                 PUTC, 's',0
+                };
+    size_data=sizeof(data);
+
+    String *s=str_init("");
+
+    printf("\nparser:\n\n");
+
+    int g;
+    for(g=size_data-1; g>=0; g--)
+        str_push(s, data[g]);
+    tree=parse(s);
+
+    printf("\ninterpretator:\n\n");
+
+    if(tree)
+        translate_C(tree);
+    else
+        printf("error");
+}
+
+void functions_test()
+{
+    Tree *tree=0;
+
+    interpretator_table_init();
+
+    char data[]={
+
+                 FUNCTION, 'a',0,
+                    VAR_INIT, 'b',0,
+                    CONST_INIT, '1',0, 1,0,0,0,
+                    CONST_INIT, '0',0, 0,0,0,0,
+                    ASSIGNMENT, 'b',0, '1',0,
+
+                    PUTC, 'b',0,
+                    CALL, 'a',0,
+/*
+                    LOOP,
+                        IF, 'b',0,
+                            BREAK,
+                        END,
+                    END,*/
+/*
+                    IF, 'b',0,
+                        PUTC, 'b',0,
+                    END,*/
+                 END,
+
+                 CALL, 'a',0,
+                 /*
+                 VAR_INIT, 'm',0,
+                 CONST_INIT, '1',0, 1,0,0,0,
+                 ASSIGNMENT, 'm',0, '1',0,
+                 INC, 'm',0,
+                 PUTC, 'm',0*/
+                };
+    size_data=sizeof(data);
+
+    String *s=str_init("");
+
+    printf("\nparser:\n\n");
+
+    int g;
+    for(g=size_data-1; g>=0; g--)
+        str_push(s, data[g]);
+    tree=parse(s);
+
+    printf("\ninterpretator:\n\n");
+
+    if(tree)
+        run(tree);
+    else
+        printf("error");
+}
+
+void arifmetic_test()
+{
+    Tree *tree=0;
+
+    interpretator_table_init();
+
+    char data[]={
+                 CONST_INIT, 'c',0, 1,0,0,0,
+                 VAR_INIT, 's',0,
+                 CONST_STRING_INIT, 'q',0, 2,0,0,0, 'a','l',
+
+                 ASSIGNMENT, 's',0, 'c',0,
+
+                 ADD, 's',0, 's',0, 's',0,
+                 MUL, 's',0, 's',0, 's',0,
+                 DIV, 's',0, 's',0, 's',0,
+                 SUB, 's',0, 's',0, 's',0,
+
+                 AND, 's',0, 's',0, 's',0,
+                 OR, 's',0, 's',0, 's',0,
+                 NOT, 's',0, 's',0,
+                 XOR, 's',0, 's',0, 's',0,
+
+                 ASSIGNMENT, 's',0, 'c',0,
+
+                 SHL, 's',0, 's',0, 's',0,
+                 SHR, 's',0, 's',0, 's',0,
+
+                 EQ, 's',0, 's',0, 's',0,
+                 NEQ, 's',0, 's',0, 's',0,
+                 LT, 's',0, 's',0, 's',0,
+                 GT, 's',0, 's',0, 's',0,
+                 LE, 's',0, 's',0, 's',0,
+                 GE, 's',0, 's',0, 's',0,
+                };
+    size_data=sizeof(data);
+
+    String *s=str_init("");
+
+    printf("\nparser:\n\n");
+
+    int g;
+    for(g=size_data-1; g>=0; g--)
+        str_push(s, data[g]);
+    tree=parse(s);
+
+    printf("\ninterpretator:\n\n");
+
+    if(tree)
+        run(tree);
+    else
+        printf("error");
+}
+
+int main()
+{
+    //c_test();
+    //return 0;
+
+    FILE *f=fopen("test.app","wb");
+    int i;
+
+    debug=1;
+
+    if(debug)
+        printf("\nlexer:\n\n");
+    String *data;
+    Tree *tree=0;
+
+    data=lexer("out.txt");
+
+    if(debug)
+        printf("\nparser:\n\n");
+    if(data)
+        tree=parse(data);
+
+    if(debug)
+        printf("\ninterpretator:\n\n");
+
+    if(tree)
+        run(tree);
+    else
+        printf("error");
+
+    return 0;
+}
