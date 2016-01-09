@@ -29,28 +29,28 @@ void interpretator_table_init()
 
     interpretator_table[PUTC]=interpretator_putc;
 
-    interpretator_table[VAR_VAR]=interpretator_var_var;
-    interpretator_table[VAR_CONST]=interpretator_var_const;
-    interpretator_table[VAR_ELEMENT]=interpretator_var_el;
-    interpretator_table[VAR_PTR]=interpretator_var_ptrs;
-    interpretator_table[VAR_ARRAY]=interpretator_var_array;
-    interpretator_table[VAR_CONST_STRING]=interpretator_var_const_string;
+    interpretator_table[INT_INT]=interpretator_var_var;
+    interpretator_table[INT_CONST]=interpretator_var_const;
+    interpretator_table[INT_ELEMENT]=interpretator_var_el;
+    interpretator_table[INT_PTR]=interpretator_var_ptrs;
+    interpretator_table[INT_ARRAY]=interpretator_var_array;
+    interpretator_table[INT_CONST_STRING]=interpretator_var_const_string;
 
-    interpretator_table[ELEMENT_VAR]=interpretator_el_var;
+    interpretator_table[ELEMENT_INT]=interpretator_el_var;
     interpretator_table[ELEMENT_CONST]=interpretator_el_const;
     interpretator_table[ELEMENT_ELEMENT]=interpretator_el_el;
     interpretator_table[ELEMENT_PTR]=interpretator_el_ptrs;
     interpretator_table[ELEMENT_ARRAY]=interpretator_el_array;
     interpretator_table[ELEMENT_CONST_STRING]=interpretator_el_const_string;
 
-    interpretator_table[PTR_VAR]=interpretator_ptrs_var;
+    interpretator_table[PTR_INT]=interpretator_ptrs_var;
     interpretator_table[PTR_CONST]=interpretator_ptrs_const;
     interpretator_table[PTR_ELEMENT]=interpretator_ptrs_el;
     interpretator_table[PTR_PTR]=interpretator_ptrs_ptrs;
     interpretator_table[PTR_ARRAY]=interpretator_ptrs_array;
     interpretator_table[PTR_CONST_STRING]=interpretator_ptrs_const_string;
 
-    interpretator_table[ARRAY_VAR]=interpretator_array_var;
+    interpretator_table[ARRAY_INT]=interpretator_array_var;
     interpretator_table[ARRAY_ARRAY]=interpretator_array_const;
     interpretator_table[ARRAY_ELEMENT]=interpretator_array_el;
     interpretator_table[ARRAY_PTR]=interpretator_array_ptrs;

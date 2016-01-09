@@ -56,12 +56,12 @@ void c_putc()
     Putc *putc_data=(Putc*)c_data->data;
     Type *data=putc_data->data;
 
-    Variable *var;
+    Number *var;
 
     switch(data->type)
     {
-        case VARIABLE:
-            var=(Variable*)data->data;
+        case INTEGER:
+            var=(Number*)data->data;
             fprintf(c_file, "print_var(");
             str_fprint(var->name);
             fprintf(c_file, ");");

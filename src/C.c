@@ -7,7 +7,7 @@ void str_fprint(String *s);
 
 FILE *c_file;
 
-Variable *c_var;
+Number *c_var;
 
 void c_define_all_variables(Tree *types)
 {
@@ -20,8 +20,8 @@ void c_define_all_variables(Tree *types)
         data=(Type*)types->data;
         switch(data->type)
         {
-            case VARIABLE:
-                c_var=(Variable*)data->data;
+            case INTEGER:
+                c_var=(Number*)data->data;
 
                 fprintf(c_file, "int ");
                 str_fprint(c_var->name);
@@ -47,28 +47,28 @@ void c_table_init()
 
     c_table[PUTC]=c_putc;
 
-    c_table[VAR_VAR]=c_var_var;
-    c_table[VAR_CONST]=c_var_const;
-    c_table[VAR_ELEMENT]=c_var_el;
-    c_table[VAR_PTR]=c_var_ptrs;
-    c_table[VAR_ARRAY]=c_var_array;
-    c_table[VAR_CONST_STRING]=c_var_const_string;
+    c_table[INT_INT]=c_var_var;
+    c_table[INT_CONST]=c_var_const;
+    c_table[INT_ELEMENT]=c_var_el;
+    c_table[INT_PTR]=c_var_ptrs;
+    c_table[INT_ARRAY]=c_var_array;
+    c_table[INT_CONST_STRING]=c_var_const_string;
 
-    c_table[ELEMENT_VAR]=c_el_var;
+    c_table[ELEMENT_INT]=c_el_var;
     c_table[ELEMENT_CONST]=c_el_const;
     c_table[ELEMENT_ELEMENT]=c_el_el;
     c_table[ELEMENT_PTR]=c_el_ptrs;
     c_table[ELEMENT_ARRAY]=c_el_array;
     c_table[ELEMENT_CONST]=c_el_const_string;
 
-    c_table[PTR_VAR]=c_ptrs_var;
+    c_table[PTR_INT]=c_ptrs_var;
     c_table[PTR_CONST]=c_ptrs_const;
     c_table[PTR_ELEMENT]=c_ptrs_el;
     c_table[PTR_PTR]=c_ptrs_ptrs;
     c_table[PTR_ARRAY]=c_ptrs_array;
     c_table[PTR_CONST_STRING]=c_ptrs_const_string;
 
-    c_table[ARRAY_VAR]=c_array_var;
+    c_table[ARRAY_INT]=c_array_var;
     c_table[ARRAY_ARRAY]=c_array_const;
     c_table[ARRAY_ELEMENT]=c_array_el;
     c_table[ARRAY_PTR]=c_array_ptrs;

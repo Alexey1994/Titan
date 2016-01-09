@@ -11,15 +11,15 @@
 #include "time.h"
 #include "C.h"
 
-char debug=0;
+char debug=0, disasm=0;
 
 void free_test()
 {
     Tree *tree=0;
     char data[]={
-                 VAR_INIT, 'n',0,
-                 VAR_INIT, 'm',0,
-                 VAR_INIT, 't',0,
+                 INT_INIT, 'n',0,
+                 INT_INIT, 'm',0,
+                 INT_INIT, 't',0,
                  ARRAY_INIT, 'g',0,
                  ELEMENT_INIT, 'e',0,
                  PTRS_INIT, 'p',0,
@@ -49,7 +49,7 @@ void free_test()
 
                  FUNCTION, 'a',0,
                     FUNCTION, 'o',0,
-                        VAR_INIT, 'l',0,
+                        INT_INIT, 'l',0,
                     END,
                  END,
 
@@ -80,9 +80,9 @@ void power_test()
     int start;
 
     char data[]={
-                 VAR_INIT, 'i',0,
-                 VAR_INIT, 't',0,
-                 VAR_INIT, 'v',0,
+                 INT_INIT, 'i',0,
+                 INT_INIT, 't',0,
+                 INT_INIT, 'v',0,
                  CONST_INIT, 's',0, 0,0,0,1,
                  CONST_INIT, '0',0, 0,0,0,0,
 
@@ -131,7 +131,7 @@ void if_test()
 
     char data[]={
                  CONST_INIT, 'c',0, 1,0,0,0,
-                 VAR_INIT, 's',0,
+                 INT_INIT, 's',0,
 
                  ASSIGNMENT, 's',0, 'c',0,
 
@@ -181,7 +181,7 @@ void c_test()
     char data[]={
                  CONST_INIT, 'c',0, 1,0,0,0,
                  CONST_INIT, 'd',0, 2,0,0,0,
-                 VAR_INIT, 's',0,
+                 INT_INIT, 's',0,
 
                  ASSIGNMENT, 's',0, 'c',0,
 
@@ -222,33 +222,14 @@ void functions_test()
 
     char data[]={
 
-                 FUNCTION, 'a',0,
-                    VAR_INIT, 'b',0,
+                 FUNCTION, 'a','d',0,
+                    INT_INIT, '0','b',0,
                     CONST_INIT, '1',0, 1,0,0,0,
-                    CONST_INIT, '0',0, 0,0,0,0,
-                    ASSIGNMENT, 'b',0, '1',0,
+                    //CONST_INIT, '0',0, 0,0,0,0,
+                    ASSIGNMENT, '0','b',0, '1',0,
 
-                    PUTC, 'b',0,
-                    CALL, 'a',0,
-/*
-                    LOOP,
-                        IF, 'b',0,
-                            BREAK,
-                        END,
-                    END,*/
-/*
-                    IF, 'b',0,
-                        PUTC, 'b',0,
-                    END,*/
-                 END,
-
-                 CALL, 'a',0,
-                 /*
-                 VAR_INIT, 'm',0,
-                 CONST_INIT, '1',0, 1,0,0,0,
-                 ASSIGNMENT, 'm',0, '1',0,
-                 INC, 'm',0,
-                 PUTC, 'm',0*/
+                    PUTC, '0','b',0,
+                 END
                 };
     size_data=sizeof(data);
 
@@ -277,7 +258,7 @@ void arifmetic_test()
 
     char data[]={
                  CONST_INIT, 'c',0, 1,0,0,0,
-                 VAR_INIT, 's',0,
+                 INT_INIT, 's',0,
                  CONST_STRING_INIT, 'q',0, 2,0,0,0, 'a','l',
 
                  ASSIGNMENT, 's',0, 'c',0,
@@ -325,20 +306,30 @@ void arifmetic_test()
 
 int main()
 {
+    //functions_test(); return 0;
     //c_test();
     //return 0;
 
-    FILE *f=fopen("test.app","wb");
+    FILE *f=fopen("bytecode.app","wb");
     int i;
 
     debug=1;
+    disasm=1;
 
     if(debug)
         printf("\nlexer:\n\n");
     String *data;
     Tree *tree=0;
 
-    data=lexer("out.txt");
+    data=lexer("example.txt");
+
+    struct ListNode *l=data->end;
+    while(l)
+    {
+        fputc(l->data, f);
+        l=l->previouse;
+    }
+    fclose(f);
 
     if(debug)
         printf("\nparser:\n\n");

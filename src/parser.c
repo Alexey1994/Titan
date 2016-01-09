@@ -32,7 +32,7 @@ void parser_table_init()
     parser_table[ELEMENT_INIT]=parser_element_init;
     parser_table[PTRS_INIT]=parser_ptrs_init;
     parser_table[ARRAY_INIT]=parser_array_init;
-    parser_table[VAR_INIT]=parser_var_init;
+    parser_table[INT_INIT]=parser_var_init;
     parser_table[CONST_INIT]=parser_const_init;
     parser_table[CONST_STRING_INIT]=parser_const_string_init;
 
@@ -85,7 +85,7 @@ String *next_token(String *s)
         while(s->length)
         {
             t=str_pop(s);
-            if(!t) break;
+            if(t=='\0') break;
             str_push(ret, t);
         }
 
@@ -116,9 +116,9 @@ Type *get_parser_op(String *s, Function *cur_function)
     Type *op;
 
     new_string=next_token(s);
-    op=find_global_type(cur_function->types, stack_functions, new_string);
+    op=find_global_type(cur_function, stack_functions, new_string);
 
-    if(op==0 || op->type!=VARIABLE)
+    if(op==0 || op->type!=INTEGER)
     {
         printf("variable ");
         str_print(new_string);
@@ -241,7 +241,7 @@ Type *find_global_type(Function *cur_function, Stack *functions, String *s)
         data=i->data;
         type=find_type(data->types, s);
         if(type)
-            return data;
+            return type;
         i=i->previouse;
     }
 
@@ -259,9 +259,9 @@ Type *new_type(String *name, int type, char *data)
     return ret;
 }
 
-Variable* new_variable(String *name, int data)
+Number* new_variable(String *name, int data)
 {
-    Variable *ret=malloc(sizeof(Variable));
+    Number *ret=malloc(sizeof(Number));
 
     ret->data=data;
     ret->name=name;

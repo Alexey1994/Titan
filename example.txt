@@ -1,5 +1,6 @@
-Z x=11+22*(78-90)+12/(2-3)
+function g(Z a)
+	a=a+1
+	print a
+end
 
-Pointers p,y
-Element e="Alexey"
-print e, p, y, x
+g()

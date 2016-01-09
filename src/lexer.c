@@ -22,6 +22,47 @@ int size_data=0,
 
 char c=0;
 
+void lexer_print_args(List *args)
+{
+    struct ListNode *i=args->begin;
+    Type *data;
+
+    printf("(");
+    while(i)
+    {
+        data=i->data;
+        str_print(data->name);
+        if(i->next)
+            printf(",");
+        i=i->next;
+    }
+    printf(")");
+}
+
+int lexer_braces_count=0;
+void lexer_print_functions(Tree *node)
+{
+    Function *data;
+    int i;
+    if(node)
+    {
+        lexer_print_functions((Tree*)node->left);
+        data=(Function*)node->data;
+        lexer_braces_count++;
+
+        for(i=0; i<lexer_braces_count; i++)
+            printf("   ");
+        str_print(data->name);
+        lexer_print_args(data->args);
+        printf(":\n");
+        //print_variables((Tree*)data->types);
+
+        lexer_print_functions(data->functions);
+        lexer_braces_count--;
+        lexer_print_functions((Tree*)node->right);
+    }
+}
+
 char is_number(char c)
 {
     if(c>='0' && c<='9')
@@ -75,52 +116,52 @@ void skip()
     }
 }
 
-void new_assembler_var(char *name, int *i, char *data)
+void new_assembler_var(String *name)
 {
-    data[*i]=VAR_INIT; *i+=1;
-    strcpy(data+*i, name); *i+=strlen(name)+1;
+    str_push_back(lexer_out_data, INT_INIT);
+    copy_data_token(name);
 }
 
-void new_assembler_assignment2(char *out, char *in, int *i, char *data)
+void new_assembler_assignment2(String *out, String *in)
 {
-    data[*i]=ASSIGNMENT; *i+=1;
-    strcpy(data+*i, out); *i+=strlen(out)+1;
-    strcpy(data+*i, in); *i+=strlen(in)+1;
+    str_push_back(lexer_out_data, ASSIGNMENT);
+    copy_data_token(out);
+    copy_data_token(in);
 }
 
-void new_assembler_alloc2(char *out, char *sz, int *i, char *data)
+void new_assembler_alloc2(String *out, String *sz)
 {
-    data[*i]=ALLOC; *i+=1;
-    strcpy(data+*i, out); *i+=strlen(out)+1;
-    strcpy(data+*i, sz); *i+=strlen(sz)+1;
+    str_push_back(lexer_out_data, ALLOC);
+    copy_data_token(out);
+    copy_data_token(sz);
 }
 
-void new_assembler_assignment3(char *out, char *ind, char *in, int *i, char *data)
+void new_assembler_assignment3(String *out, String *ind, String *in)
 {
-    data[*i]=ASSIGNMENT; *i+=1;
-    strcpy(data+*i, out); *i+=strlen(out)+1;
-    strcpy(data+*i, ind); *i+=strlen(ind)+1;
-    strcpy(data+*i, in); *i+=strlen(in)+1;
+    str_push_back(lexer_out_data, ASSIGNMENT);
+    copy_data_token(out);
+    copy_data_token(ind);
+    copy_data_token(in);
 }
 
-void new_assembler_inc(char *name, int *i, char *data)
+void new_assembler_inc(String *name)
 {
-    data[*i]=INC; *i+=1;
-    strcpy(data+*i, name); *i+=strlen(name)+1;
+    str_push_back(lexer_out_data, INC);
+    copy_data_token(name);
 }
 
 void new_assembler_ptrs_init(char *name, int *i, char *data)
 {
-    data[*i]=PTRS_INIT; *i+=1;
-    strcpy(data+*i, name); *i+=strlen(name)+1;
+    str_push_back(lexer_out_data, PTRS_INIT);
+    copy_data_token(name);
 }
 
-PtrsData *new_tree_ptrs(char *name, Type *data,int index)
+PtrsMapping *new_ptrs_map_element(String *name, Type *element, unsigned int index)
 {
-    PtrsData *ret=malloc(sizeof(PtrsData));
+    PtrsMapping *ret=malloc(sizeof(PtrsMapping));
     ret->index=index;
-    ret->name=name;
-    ret->data=data;
+    ret->name_element=name;
+    ret->element=element;
     return ret;
 }
 
@@ -133,45 +174,76 @@ Type *new_tree_data(char *name, char *data, char type)
     return ret;
 }
 
-void get_pointers(char *ptrs, int *i, char *data)
+void get_pointers(String *name_ptrs, Function *cur_function, Stack *stack_functions)
 {
-    /*
-    Tree *ptrs_ret=tree_init(new_tree_ptrs("Alexey", new_tree_data("0a", 0, VARIABLE), 0));
+    String *register_0v=str_init("0v"),
+           *token_empty=str_init(""),
+           *register_0c=str_init("0c"),
+           *const_0=str_init("0"),
+           *const_1=str_init("11");
+
+    Type *tree_data_tmp, *tree_data_tmp2;
+
+    Tree *ptrs_ret=tree_init(new_ptrs_map_element("Alexey", new_tree_data("0a", 0, INTEGER), 0));
     char *s;
+    Type *expr;
 
     skip();
-    if(buf[j]!='{')
+    if(buf->end==0 || buf->end->data!='{')
     {
         printf("line %d: excepted '{'", line);
         return 0;
     }
-    j++;
+    str_pop(buf);
 
-    new_assembler_alloc2(ptrs, "sz", i, data);
-    new_assembler_assignment2("0a", "0", i, data);
+    new_assembler_assignment2(register_0c, const_1);
+    new_assembler_alloc2(name_ptrs, register_0c);
+    //new_assembler_assignment2("0a", "0", i, data);
 
-    while(buf[j]!='}')
+    new_assembler_assignment2(register_0c, const_0);
+
+    while(buf->end->data!='}')
     {
+get_ptrs:
         skip();
 
-        switch(buf[j])
+        switch(buf->end->data)
         {
+        default:
+            {
+                expr=get_expression(cur_function, stack_functions);
+                new_assembler_assignment3(name_ptrs, register_0c, expr->name);
+                new_assembler_inc(register_0c);
+            }
+            break;
+
         case 'Z':
             {
-                printf("%c", buf[j]);
-                j++;
+                printf("%c", buf->end->data);
+                str_pop(buf);
+                if(buf->end==0)
+                {
+                    printf("%d: excepted }", line);
+                    return 0;
+                }
 ptrs_get_z:
                 skip();
                 s=get_word();
+                if(buf->end==0)
+                {
+                    printf("%d: excepted }", line);
+                    return 0;
+                }
+
                 printf(s);
                 skip();
 
-                s=generate_id(id_const);
+                s=generate_id(lexer_id);
 
-                new_assembler_var(s, i, data);
-                new_assembler_assignment3(ptrs, "0a", s, i, data);
-                new_assembler_inc("0a", i, data);
-
+//                new_assembler_var(s, i, data);
+//                new_assembler_assignment3(ptrs, "0a", s, i, data);
+//                new_assembler_inc("0a", i, data);
+/*
                 if(buf[j]=='=')
                 {
                     j++;
@@ -185,19 +257,19 @@ ptrs_get_z:
                     j++;
                     goto ptrs_get_z;
                 }
-                break;
+                break;*/
             }
         }
     }
 
-    j++;
-    printf("\n\n");*/
+    str_pop(buf);
+    printf("\n\n");
 }
 
 void init_constants_and_registers(String *data, Function *cur_function)
 {
-    add_type(cur_function, 0, str_init(""), VARIABLE);
-    str_push_back(data, VAR_INIT);
+    add_type(cur_function, 0, str_init(""), INTEGER);
+    str_push_back(data, INT_INIT);
     str_push_back(data, '\0');
 
     add_type(cur_function, 0, str_init("0"), CONST);
@@ -208,11 +280,11 @@ void init_constants_and_registers(String *data, Function *cur_function)
     str_push_back(data, 0);
     str_push_back(data, 0);
     str_push_back(data, 0);
-
+/*
     str_push_back(data, ASSIGNMENT);
     str_push_back(data, '\0');
     str_push_back(data, '0');
-    str_push_back(data, '\0');
+    str_push_back(data, '\0');*/
 
     add_type(cur_function, 0, str_init("1"), CONST);
     str_push_back(data, CONST_INIT);
@@ -232,32 +304,37 @@ void init_constants_and_registers(String *data, Function *cur_function)
     str_push_back(data, 0);
     str_push_back(data, 0);
 
-    add_type(cur_function, 0, str_init("0v"), VARIABLE);
-    str_push_back(data, VAR_INIT);
+    add_type(cur_function, 0, str_init("0v"), INTEGER);
+    str_push_back(data, INT_INIT);
     str_push_back(data, '0');
     str_push_back(data, 'v');
     str_push_back(data, '\0');
 
-    add_type(cur_function, 0, str_init("0s"), VARIABLE);
-    str_push_back(data, VAR_INIT);
+    add_type(cur_function, 0, str_init("0s"), INTEGER);
+    str_push_back(data, INT_INIT);
     str_push_back(data, '0');
     str_push_back(data, 's');
     str_push_back(data, '\0');
 
-    add_type(cur_function, 0, str_init("0i"), VARIABLE);
-    str_push_back(data, VAR_INIT);
+    add_type(cur_function, 0, str_init("0i"), INTEGER);
+    str_push_back(data, INT_INIT);
     str_push_back(data, '0');
     str_push_back(data, 'i');
     str_push_back(data, '\0');
 
-    str_push_back(data, VAR_INIT);
+    str_push_back(data, INT_INIT);
     str_push_back(data, '0');
     str_push_back(data, 'a');
     str_push_back(data, '\0');
 
-    str_push_back(data, VAR_INIT);
+    str_push_back(data, INT_INIT);
     str_push_back(data, '0');
     str_push_back(data, 'd');
+    str_push_back(data, '\0');
+
+    str_push_back(data, INT_INIT);
+    str_push_back(data, '0');
+    str_push_back(data, 'c');
     str_push_back(data, '\0');
 }
 
@@ -290,13 +367,15 @@ String *lexer(char *name)
 
            *register_0v=str_init("0v");
 
-    Variable *t_var;
+    Type *expr1, *expr2, *type_tmp;
+
+    Number *t_var;
 
     FILE *f=fopen(name, "rb");
 
     lexer_out_data=str_init("");
 
-    String *tmp, *tmp2;
+    String *tmp, *tmp2, *args=str_init("");
     Function *cur_function=new_function(str_init("")), *tmp_function, *function_alloc;
     Tree *fun=tree_init((char*)cur_function);
 
@@ -308,6 +387,7 @@ String *lexer(char *name)
     int num, delta_line;
     char *id;
 
+    cur_function->args=list_init();
     line=1;
     lexer_id=id_init(128, 255);
     Const *constant;
@@ -347,13 +427,62 @@ String *lexer(char *name)
 
             push(stack_functions, cur_function);
             function_alloc=new_function(tmp);
-            tree_add(cur_function->functions, function_alloc, function_cmp);
+            function_alloc->args=list_init();
+            if(cur_function->functions)
+                tree_add(cur_function->functions, function_alloc, function_cmp);
+            else
+                cur_function->functions=tree_init(function_alloc);
             cur_function=function_alloc;
 
             str_push_back(lexer_out_data, FUNCTION);
             copy_data_token(tmp);
 
-            str_clear(tmp);
+            skip();
+            if(buf->end==0 || buf->end->data!='(')
+            {
+                printf("%d :excepted (\n", line);
+                return 0;
+            }
+            str_pop(buf);
+
+get_args:
+            skip();
+            args=get_word();
+
+            if(args->length)
+            {
+                if(str_comparision(token_integer, args)==0)
+                {
+                    skip();
+                    tmp=get_word();
+                    add_type(cur_function, 0, tmp, INTEGER);
+                    type_tmp=find_type(cur_function->types, tmp);
+                    list_push(cur_function->args, type_tmp);
+                    new_assembler_var(tmp);
+                }
+                else
+                {
+                    printf("%d: undefined type ", line);
+                    str_print(args);
+                    printf("\n");
+                    return 0;
+                }
+
+                skip();
+                if(buf->end && buf->end->data==',')
+                {
+                    str_pop(buf);
+                    goto get_args;
+                }
+
+                if(buf->end==0)
+                {
+                    printf("%d: excepted )\n", line);
+                    return 0;
+                }
+            }
+
+            str_pop(buf);
         }
         else if(str_comparision(tmp, token_end)==0)
         {
@@ -362,7 +491,7 @@ String *lexer(char *name)
         else if(str_comparision(tmp, token_integer)==0)
         {
 get_var:
-            str_push_back(lexer_out_data, VAR_INIT);
+            str_push_back(lexer_out_data, INT_INIT);
 
             skip();
             tmp=get_word();
@@ -373,16 +502,15 @@ get_var:
                 return 0;
             }
 
-            add_type(cur_function, 0, tmp, VARIABLE);
+            add_type(cur_function, 0, tmp, INTEGER);
             copy_data_token(tmp);
 
             skip();
             if(buf->end && buf->end->data=='=')
             {
                 str_pop(buf);
-                tree_data_tmp=find_type(cur_function->types, tmp);
-                tree_data_tmp2=find_type(cur_function->types, token_empty);
-                get_expression(cur_function, stack_functions, tree_data_tmp, tree_data_tmp2);
+                expr1=get_expression(cur_function, stack_functions);
+                new_assembler_assignment2(tmp, expr1->name);
             }
 
             if(buf->end && buf->end->data==',')
@@ -508,9 +636,8 @@ get_element:
 
                     if(str_comparision(tmp2, token_new)==0)
                     {
-                        tree_data_tmp=find_global_type(cur_function, stack_functions, token_empty);
-                        tree_data_tmp2=find_global_type(cur_function, stack_functions, token_empty);
-                        get_expression(cur_function, stack_functions, tree_data_tmp, tree_data_tmp2);
+                        expr1=get_expression(cur_function, stack_functions);
+                        new_assembler_assignment2(token_empty, expr1->name);
 
                         str_push_back(lexer_out_data, ALLOC);
                         copy_data_token(tmp);
@@ -551,7 +678,7 @@ get_pointer:
             if(buf->end && buf->end->data=='=')
             {
                 str_pop(buf);
-                //get_pointers(tmp, &i, data);
+                get_pointers(tmp, cur_function, stack_functions);
 
                 //tree_data_tmp=find_global_and_local_element(cur_function, global_types, tmp);
                 //tree_data_tmp2=find_global_and_local_element(cur_function, global_types, "");
@@ -567,9 +694,7 @@ get_pointer:
         }
         else if(str_comparision(tmp, token_while)==0)
         {
-            tree_data_tmp=find_global_type(cur_function, stack_functions, token_empty);
-            tree_data_tmp2=find_global_type(cur_function, stack_functions, token_empty);
-            get_expression(cur_function, stack_functions, tree_data_tmp, tree_data_tmp2);
+            expr1=get_expression(cur_function, stack_functions);
 
             str_push_back(lexer_out_data, LOOP);
 
@@ -582,15 +707,15 @@ get_pointer:
             str_push_back(lexer_out_data, '\0');
 
             str_push_back(lexer_out_data, EQ);
-            str_push_back(lexer_out_data, '\0');
-            str_push_back(lexer_out_data, '\0');
+            copy_data_token(expr1->name);
+            copy_data_token(expr1->name);
 
             str_push_back(lexer_out_data, '0');
             str_push_back(lexer_out_data, 'v');
             str_push_back(lexer_out_data, '\0');
 
             str_push_back(lexer_out_data, IF);
-            str_push_back(lexer_out_data, '\0');
+            copy_data_token(expr1->name);
             str_push_back(lexer_out_data, BREAK);
             str_push_back(lexer_out_data, END);
         }
@@ -600,12 +725,9 @@ get_pointer:
         }
         else if(str_comparision(tmp, token_if)==0)
         {
-            tree_data_tmp=find_global_type(cur_function, stack_functions, token_empty);
-            tree_data_tmp2=find_global_type(cur_function, stack_functions, token_empty);
-            get_expression(cur_function, stack_functions, tree_data_tmp, tree_data_tmp2);
-
+            expr1=get_expression(cur_function, stack_functions);
             str_push_back(lexer_out_data, IF);
-            str_push_back(lexer_out_data, '\0');
+            copy_data_token(expr1->name);
         }
         else if(str_comparision(tmp, token_print)==0)
         {
@@ -671,37 +793,58 @@ get_print:
             while(buf->end && buf->end->data!='\n')
                 str_pop(buf);
             line++;
-        }/*
+        }
         else
         {
-            tree_data_tmp=find_tree_element(cur_function, tmp);
-            if(tree_data_tmp==0 )//|| tree_data_tmp->name[0]=='\0')
+            tree_data_tmp=find_global_type(cur_function, stack_functions, tmp);
+            if(tree_data_tmp==0)
             {
-                /*
-                tmp_function=find_function(fun, tmp);
-                if(tmp_function && tmp_function->name[0]!='\0')
+                tmp_function=find_global_function(cur_function->functions, stack_functions, tmp);
+                if(tmp_function)
                 {
-                    data[i]=CALL;
-                    i++;
+                    skip();
 
-                    strcpy(data+i, tmp);
-                    i+=strlen(tmp)+1;
+                    if(buf->end && buf->end->data=='(')
+                    {
+                        str_pop(buf);
+                        skip();
+
+                        while(buf->end && buf->end->data!=')')
+                        {
+                            expr1=get_expression(cur_function, stack_functions);
+                        }
+
+                        if(buf->end && buf->end->data==')')
+                            str_pop(buf);
+                        else
+                        {
+                            printf("%d: excepted )\n", line);
+                            return 0;
+                        }
+                    }
+                    else
+                    {
+                        printf("%d: excepted (\n", line);
+                        return 0;
+                    }
+
+                    str_push_back(lexer_out_data, CALL);
+                    copy_data_token(tmp);
                 }
                 else
                 {
-                    if(tmp[0]) printf("%d: error: '%s'\n", line, tmp);
-                    else if(buf[j]=='\'' || buf[j]=='"') printf("%d: error: %c\n", line, buf[j]);
-                    else printf("%d: error: '%c'\n", line, buf[j]);
+                    printf("%d: not found expression for '", line);
+                    str_print(tmp);
+                    printf("'\n");
 
                     return 0;
-                }*/
-            /*
+                }
             }
             else
             {
                 skip();
 
-                if(buf[j]=='[')
+                if(buf->end && buf->end->data=='[')
                 {
                     if(tree_data_tmp->type!=ELEMENT)
                     {
@@ -709,13 +852,12 @@ get_print:
                         return 0;
                     }
 
-                    j++;
-                    tree_data_tmp2=find_tree_element(cur_function, "0i");
-                    get_expression(cur_function, global_types, tree_data_tmp2, tree_data_tmp2, data, &i);
+                    str_pop(buf);
+                    expr1=get_expression(cur_function, stack_functions);
 
-                    if(buf[j]==']')
+                    if(buf->end && buf->end->data==']')
                     {
-                        j++;
+                        str_pop(buf);
                     }
                     else
                     {
@@ -724,22 +866,12 @@ get_print:
                     }
 
                     skip();
-                    if(buf[j]=='=')
+                    if(buf->end && buf->end->data=='=')
                     {
-                        j++;
-                        tree_data_tmp3=find_tree_element(cur_function, "");
-                        tree_data_tmp2=find_tree_element(cur_function, "");
-                        get_expression(cur_function, global_types, tree_data_tmp3, tree_data_tmp2, data, &i);
+                        str_pop(buf);
+                        expr2=get_expression(cur_function, stack_functions);
 
-                        data[i]=ASSIGNMENT; i++;
-
-                        strcpy(data+i, tmp); i+=strlen(tmp)+1;
-
-                        data[i]='\0'; i++;
-
-                        data[i]='0'; i++;
-                        data[i]='i'; i++;
-                        data[i]='\0'; i++;
+                        new_assembler_assignment3(tmp, expr2->name, expr1->name);
                     }
                     else
                     {
@@ -747,11 +879,11 @@ get_print:
                         return 0;
                     }
                 }
-                else if(buf[j]=='=')
+                else if(buf->end && buf->end->data=='=')
                 {
-                    j++;
-                    tree_data_tmp2=find_tree_element(cur_function, "");
-                    get_expression(cur_function, global_types, tree_data_tmp, tree_data_tmp2, data, &i);
+                    str_pop(buf);
+                    expr1=get_expression(cur_function, stack_functions);
+                    new_assembler_assignment2(tmp, expr1->name);
                 }
                 else
                 {
@@ -759,16 +891,11 @@ get_print:
                     return 0;
                 }
             }
-        }*/
-        else
-        {
-            printf("error %c\n", buf->end->data);
-            return 0;
         }
     }
 
-    //printf("\nglobal:\n");
-    //print_functions(fun);
+    printf("\nFunctions:\n");
+    lexer_print_functions(fun);
 
     return lexer_out_data;
 }

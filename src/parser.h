@@ -13,34 +13,34 @@
 #define PTRS_INIT 0x01
 #define ARRAY_INIT 0x02
 #define ELEMENT_INIT 0x03
-#define VAR_INIT 0x04
+#define INT_INIT 0x04
 #define CONST_INIT 0x05
 #define CONST_STRING_INIT 0x51
 #define FUNCTION 0x06
 #define STREAM 0x07
 
-#define ELEMENT_VAR 0x0c
+#define ELEMENT_INT 0x0c
 #define ELEMENT_ARRAY 0x0d
 #define ELEMENT_CONST 0x0e
 #define ELEMENT_PTR     0x0f
 #define ELEMENT_ELEMENT 0x10
 #define ELEMENT_CONST_STRING 0x52
 
-#define VAR_VAR 0x11
-#define VAR_ARRAY 0x12
-#define VAR_CONST 0x13
-#define VAR_PTR     0x14
-#define VAR_ELEMENT 0x15
-#define VAR_CONST_STRING 0x53
+#define INT_INT 0x11
+#define INT_ARRAY 0x12
+#define INT_CONST 0x13
+#define INT_PTR     0x14
+#define INT_ELEMENT 0x15
+#define INT_CONST_STRING 0x53
 
-#define ARRAY_VAR 0x16
+#define ARRAY_INT 0x16
 #define ARRAY_ARRAY 0x17
 #define ARRAY_PTR   0x18
 #define ARRAY_CONST 0x19
 #define ARRAY_ELEMENT 0x1a
 #define ARRAY_CONST_STRING 0x54
 
-#define PTR_VAR 0x20
+#define PTR_INT 0x20
 #define PTR_ARRAY 0x21
 #define PTR_PTR   0x22
 #define PTR_CONST 0x23
@@ -78,7 +78,7 @@
 #define CONTINUE 0x3a
 
 #define UNDEFINED 0x3b
-#define VARIABLE  0x3c
+//#define INTEGER  0x3c
 
 #define ALLOC 0x3d
 
@@ -99,24 +99,32 @@
 #define PTRS  0x01
 #define ARRAY 0x02
 #define ELEMENT 0x03
-#define VAR 0x04
+#define INTEGER 0x04
 #define CONST 0x05
 #define CONST_STRING 0x06
-
+/*
 typedef enum
 {
     INTEGER=0x01,
     FLOAT=0x02
 }VariableType;
+*/
 
 typedef struct
 {
-    VariableType type;
+    String *name;
+    char *data;
+    int type;
+}Type;
+
+typedef struct
+{
+    char type;
     char uninitialized;
     int data;
     String *name;
     int count;
-}Variable;
+}Number;
 
 typedef struct
 {
@@ -170,6 +178,7 @@ typedef struct
 {
     String *name;
     Tree *types, *functions;
+    List *args;
     List *body;
     Stack *pos;
 }Function;
@@ -177,14 +186,14 @@ typedef struct
 typedef struct
 {
     Element *el;
-    Variable *in, *index;
+    Number *in, *index;
 }ElementVar;
 
 typedef struct
 {
     Element *el;
     Const *in;
-    Variable *index;
+    Number *index;
 }ElementConst;
 
 typedef struct
@@ -196,14 +205,14 @@ typedef struct
 typedef struct
 {
     Element *el;
-    Variable *index;
+    Number *index;
     Array *arr;
 }ElementArray;
 
 typedef struct
 {
     Element *el;
-    Variable *index;
+    Number *index;
     Pointers *ptrs;
 }ElementPtr;
 
@@ -214,36 +223,36 @@ typedef struct
 
 typedef struct
 {
-    Variable *var, *index;
+    Number *var, *index;
     Element *in;
 }VarElement;
 
 typedef struct
 {
-    Variable *var, *in;
+    Number *var, *in;
 }VarVar;
 
 typedef struct
 {
-    Variable *var;
+    Number *var;
     Const *in;
 }VarConst;
 
 typedef struct
 {
-    Variable *var;
+    Number *var;
     ConstString *in;
 }VarConstString;
 
 typedef struct
 {
-    Variable *var, *index;
+    Number *var, *index;
     Array *arr;
 }VarArray;
 
 typedef struct
 {
-    Variable *var, *index;
+    Number *var, *index;
     Pointers *ptrs;
 }VarPtr;
 
@@ -251,40 +260,40 @@ typedef struct
 typedef struct
 {
     Element *in;
-    Variable *index;
+    Number *index;
     Array *arr;
 }ArrayElement;
 
 typedef struct
 {
-    Variable *var, *index;
+    Number *var, *index;
     Array *arr;
 }ArrayVar;
 
 typedef struct
 {
     Array *arr;
-    Variable *index;
+    Number *index;
     Const *in;
 }ArrayConst;
 
 typedef struct
 {
     Array *arr;
-    Variable *index;
+    Number *index;
     ConstString *in;
 }ArrayConstString;
 
 typedef struct
 {
-    Variable *index_in, *index;
+    Number *index_in, *index;
     Array *arr_in, *arr;
 }ArrayArray;
 
 typedef struct
 {
     Array *arr;
-    Variable *index;
+    Number *index;
     Pointers *ptrs;
 }ArrayPtr;
 
@@ -292,33 +301,33 @@ typedef struct
 typedef struct
 {
     Element *in;
-    Variable *index;
+    Number *index;
     Pointers *ptrs;
 }PointerElement;
 
 typedef struct
 {
-    Variable *var, *index;
+    Number *var, *index;
     Pointers *ptrs;
 }PointerVar;
 
 typedef struct
 {
     Pointers *ptrs;
-    Variable *index;
+    Number *index;
     Const *in;
 }PointerConst;
 
 typedef struct
 {
     Pointers *ptrs;
-    Variable *index;
+    Number *index;
     ConstString *in;
 }PointerConstString;
 
 typedef struct
 {
-    Variable *index;
+    Number *index;
     Array *arr;
     Pointers *ptrs;
 }PointerArray;
@@ -326,16 +335,9 @@ typedef struct
 typedef struct
 {
     Pointers *ptrs_in, *ptrs;
-    Variable *index_in, *index;
+    Number *index_in, *index;
 }PointerPtr;
 
-
-typedef struct
-{
-    String *name;
-    char *data;
-    int type;
-}Type;
 
 typedef struct
 {
@@ -360,18 +362,18 @@ typedef struct
 
 typedef struct
 {
-    Variable *cond;
+    Number *cond;
     List *eval;
 }If;
 
 typedef struct
 {
-    Variable *var;
+    Number *var;
 }Increment;
 
 typedef struct
 {
-    Variable *var;
+    Number *var;
 }Decrement;
 
 typedef struct
@@ -381,101 +383,101 @@ typedef struct
 
 typedef struct
 {
-    Variable *var1, *var2, *var_rez;
+    Number *var1, *var2, *var_rez;
 }Add;
 
 typedef struct
 {
-    Variable *var1, *var2, *var_rez;
+    Number *var1, *var2, *var_rez;
 }Sub;
 
 typedef struct
 {
-    Variable *var1, *var2, *var_rez;
+    Number *var1, *var2, *var_rez;
 }Mul;
 
 typedef struct
 {
-    Variable *var1, *var2, *var_rez;
+    Number *var1, *var2, *var_rez;
 }Div;
 
 typedef struct
 {
-    Variable *var1, *var2, *var_rez;
+    Number *var1, *var2, *var_rez;
 }And;
 
 typedef struct
 {
-    Variable *var1, *var2, *var_rez;
+    Number *var1, *var2, *var_rez;
 }Or;
 
 typedef struct
 {
-    Variable *var, *var_rez;
+    Number *var, *var_rez;
 }Not;
 
 typedef struct
 {
-    Variable *var1, *var2, *var_rez;
+    Number *var1, *var2, *var_rez;
 }Xor;
 
 typedef struct
 {
-    Variable *var_rez, *var, *shift;
+    Number *var_rez, *var, *shift;
 }Shr;
 
 typedef struct
 {
-    Variable *var_rez, *var, *shift;
+    Number *var_rez, *var, *shift;
 }Shl;
 
 
 typedef struct
 {
-    Variable *left, *right, *var;
+    Number *left, *right, *var;
 }Equal;
 
 typedef struct
 {
-    Variable *left, *right, *var;
+    Number *left, *right, *var;
 }NotEqual;
 
 typedef struct
 {
-    Variable *left, *right, *var;
+    Number *left, *right, *var;
 }GreatherThan;
 
 typedef struct
 {
-    Variable *left, *right, *var;
+    Number *left, *right, *var;
 }LesserThan;
 
 typedef struct
 {
-    Variable *left, *right, *var;
+    Number *left, *right, *var;
 }GreatherThanOrEqual;
 
 typedef struct
 {
-    Variable *left, *right, *var;
+    Number *left, *right, *var;
 }LesserThanOrEqual;
 
 typedef struct
 {
     Element *el;
-    Variable *sz;
+    Number *sz;
 }ElementAlloc;
 
 typedef struct
 {
     Array *arr;
-    Variable *sz, *length;
+    Number *sz, *length;
 }ArrayAlloc;
 
 typedef struct
 {
     Pointers *ptrs;
-    Variable *length;
+    Number *length;
 }PointersAlloc;
 
 typedef struct
@@ -485,6 +487,7 @@ typedef struct
 
 extern Id *id;
 
+Type *get_parser_op_all(String *s, Function *cur_function);
 char tree_contains(Function *cur_function, String *name);
 Type *find_type(Tree *types, String *name);
 Function *find_global_function(Tree *tree_cur_function, Stack *functions, String *s);

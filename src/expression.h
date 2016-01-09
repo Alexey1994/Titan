@@ -11,6 +11,7 @@ typedef struct
     int type;
 }ListExpressionData;
 
-int calc_expression(List *l, Type *in_var, Type *fast_var, Function *cur_function, Stack *stack_functions);
+Type* get_expression(Function *cur_function, Stack *stack_functions);
+Type* calc_expression(List *l, Function *cur_function, Stack *stack_functions);
 
 #endif // EXPRESSION_H_INCLUDED

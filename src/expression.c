@@ -15,12 +15,6 @@ extern char debug;
 
 void copy_data_token(String *tok);
 
-typedef struct
-{
-    int data;
-    int type;
-}StackData;
-
 int prior(char c)
 {
     switch(c)
@@ -199,7 +193,7 @@ void new_assembler_operation2(char type, Type *in_var, Type *o)
     }
 }
 
-int calc_expression(List *l, Type *in_var, Type *fast_var, Function *cur_function, Stack *stack_functions)
+Type* calc_expression(List *l, Function *cur_function, Stack *stack_functions)
 {
     struct ListNode *i=l->begin;
     Stack *s=stack_init();
@@ -219,15 +213,16 @@ int calc_expression(List *l, Type *in_var, Type *fast_var, Function *cur_functio
             if(s->begin==0)
             {
                 printf("%d: expected ')'\n", line);
-                return 1;
+                return 0;
             }
             else
                 o1=(Type*)pop(s);
 
             var_name=str_init(generate_id(lexer_id));
-            var_alloc=new_type(var_name, VARIABLE, 0);
+            printf("<");str_print(var_name);printf(">");
+            var_alloc=new_type(var_name, INTEGER, 0);
 
-            str_push_back(lexer_out_data, VAR_INIT);
+            str_push_back(lexer_out_data, INT_INIT);
             copy_data_token(var_name);
             //tree_add(lexer_constants->types, (char*)var_alloc, tree_type_cmp);
 
@@ -276,8 +271,8 @@ int calc_expression(List *l, Type *in_var, Type *fast_var, Function *cur_functio
 
             push(s, var_alloc);
         }
-        else if(data->type==VARIABLE)
-        {printf("d");
+        else if(data->type==INTEGER)
+        {
             push(s, data->data);
         }
         else if(data->type==CONST)
@@ -292,15 +287,16 @@ int calc_expression(List *l, Type *in_var, Type *fast_var, Function *cur_functio
     }
 
     o1=pop(s);
+    /*
     if(debug)
     {
         str_print(in_var->name); printf("=");
         str_print(o1->name); printf("\n");
     }
     new_assembler_operation2(ASSIGNMENT, in_var, o1);
-
+*/
     stack_free(s);
-    return 0;
+    return o1;
 }
 
 ListExpressionData *new_expr(char *data, int type)
@@ -322,7 +318,7 @@ void print_OPN(List *l)
     while(k)
     {
         expr=k->data;
-        if(expr->type==VARIABLE)
+        if(expr->type==INTEGER)
         {
             tree_data=expr->data;
             str_print(tree_data->name);
@@ -356,7 +352,7 @@ char add_expr_var(String *out, Tree *types, List *l)
             printf("%d: variable '"); str_print(out); printf("' not found\n", line, out);
             return 0;
         }
-        list_push(l, new_expr(type, VARIABLE));
+        list_push(l, new_expr(type, INTEGER));
     }
     str_clear(out);
 }
@@ -383,11 +379,29 @@ void add_expr_const(String *out, List *l)
     str_clear(out);
 }
 
-int get_expression(Function *cur_function, Stack *stack_functions, Type *in_var, Type *fast_var)
+#define EXPRESSION 0x99
+
+void add_expr(String *out, char type, Function *cur_function, List *l)
 {
+    switch(type)
+    {
+    case INTEGER:
+        add_expr_var(out, cur_function->types, l);
+        break;
+
+    case CONST:
+        add_expr_const(out, l);
+        break;
+    }
+}
+
+Type* get_expression(Function *cur_function, Stack *stack_functions)
+{
+    char expr_type=UNDEFINED;
+
     String *out=str_init("");
     Stack *op=stack_init();
-    char c, is_operation=0, is_expr=1, *operation, is_numeric_variable=0, is_const=0;
+    char c, is_operation=0, is_expr=1, *operation, is_integer=0, is_const=0;
     int number;
     List *l=list_init();
 
@@ -397,11 +411,12 @@ int get_expression(Function *cur_function, Stack *stack_functions, Type *in_var,
 
     while(buf->end && is_expr)
     {
-        if(!is_numeric_variable && is_number(buf->end->data))
+        if(!is_integer && is_number(buf->end->data))
         {
             str_push(out, str_pop(buf));
 
-            is_const=1;
+            expr_type=CONST;
+
             is_operation=1;
             is_gap=0;
         }
@@ -415,17 +430,14 @@ int get_expression(Function *cur_function, Stack *stack_functions, Type *in_var,
 
             str_push(out, str_pop(buf));
 
+            expr_type=INTEGER;
+
             is_operation=1;
             is_gap=0;
-            is_numeric_variable=1;
-            is_const=0;
         }
         else if(buf->end->data==' ' || buf->end->data=='\t' || buf->end->data==10)
         {
-            if(is_const)
-                add_expr_const(out, l);
-            else if(is_numeric_variable)
-                add_expr_var(out, cur_function->types, l);
+            add_expr(out, expr_type, cur_function, l);
 
             str_pop(buf);
 
@@ -438,10 +450,7 @@ int get_expression(Function *cur_function, Stack *stack_functions, Type *in_var,
         }
         else
         {
-            if(is_const)
-                add_expr_const(out, l);
-            else if(is_numeric_variable)
-                add_expr_var(out, cur_function->types, l);
+            add_expr(out, expr_type, cur_function, l);
 
             switch(buf->end->data)
             {
@@ -498,30 +507,22 @@ int get_expression(Function *cur_function, Stack *stack_functions, Type *in_var,
 
                 default:
                     is_expr=0;
-                    is_const=0;
                     break;
             }
 
             is_gap=0;
-            is_const=0;
-            is_numeric_variable=0;
+            expr_type=UNDEFINED;
         }
     }
 
     if(out->length)
-    {
-        if(is_const)
-            add_expr_const(out, l);
-        else if(is_numeric_variable)
-            add_expr_var(out, cur_function->types, l);
-    }
+        add_expr(out, expr_type, cur_function, l);
 
     while(op->begin)
         list_push(l, new_expr(pop(op), OPERATION));
 
     if(debug)
         print_OPN(l);
-    calc_expression(l, in_var, fast_var, cur_function, stack_functions);
 
-    return 0;
+    return calc_expression(l, cur_function, stack_functions);
 }

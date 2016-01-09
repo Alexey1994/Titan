@@ -69,7 +69,7 @@ Const *const_tmp;
 
 Type *putc_data;
 
-Variable *var;
+Number *var;
 Const *constant;
 Element *element;
 ConstString *const_string;
@@ -140,7 +140,7 @@ int print_ptrs_level=0;
 
 void interpretator_print(Type *putc_data)
 {
-    Variable *var;
+    Number *var;
     Const *constant;
     Element *element;
     ConstString *const_string;
@@ -156,7 +156,7 @@ void interpretator_print(Type *putc_data)
 
     switch(type)
     {
-    case VARIABLE:
+    case INTEGER:
         var=data;
         printf("%d", var->data);
         break;
@@ -264,10 +264,10 @@ void interpretator_print(Type *putc_data)
         }
         else
         {
-            printf("\n");
+            printf("{\n");
             for(k=0; k<print_ptrs_level-1; k++)
                 printf("   ");
-            printf("{\n");
+
             for(j=0; j<ptrs->ilength-1; j++)
             {
                 for(k=0; k<print_ptrs_level; k++)
@@ -283,9 +283,9 @@ void interpretator_print(Type *putc_data)
                     printf("string");
                     break;
 
-                case VARIABLE:
+                case INTEGER:
                     var=ptrs->data[j].data;
-                    printf("%s: %d", var->name, var->data);
+                    str_print(var->name); printf(": %d", var->data);
                     break;
 
                 case UNDEFINED:
@@ -316,9 +316,9 @@ void interpretator_print(Type *putc_data)
                     printf("string");
                     break;
 
-                case VARIABLE:
+                case INTEGER:
                     var=ptrs->data[ptrs->ilength-1].data;
-                    printf("%s: %d", var->name, var->data);
+                    str_print(var->name); printf(": %d", var->data);
                     break;
 
                 case UNDEFINED:
@@ -404,12 +404,12 @@ void interpretator_var_el()
 void interpretator_var_ptrs()
 {
     var_ptr_data=(VarPtr*)data->data;
-    if(var_ptr_data->ptrs->data->type!=VARIABLE)
+    if(var_ptr_data->ptrs->data->type!=INTEGER)
     {
         printf("this not variable");
         return 0;
     }
-    var_ptr_data->var->data=((Variable*)var_ptr_data->ptrs->data->data)->data;
+    var_ptr_data->var->data=((Number*)var_ptr_data->ptrs->data->data)->data;
     if(debug)
     {
         printf("<%s=%s[%d] %d>\n", var_ptr_data->var->name, var_ptr_data->ptrs->name, var_ptr_data->index->data, var_ptr_data->var->data);
@@ -598,11 +598,13 @@ void interpretator_ptrs_var()
     ptr_var_data=(PointerVar*)data->data;
     //for(j=0; j<BITS; j++)
     //ptr_var_data->ptrs->data[ptr_var_data->index->data].data[j]=((char*)&ptr_var_data->var)[j];
-    ptr_var_data->ptrs->data[ptr_var_data->index->data].type=VARIABLE;
+    ptr_var_data->ptrs->data[ptr_var_data->index->data].type=INTEGER;
     ptr_var_data->ptrs->data[ptr_var_data->index->data].data=ptr_var_data->var;
     if(debug)
     {
-        printf("<%s[%d]=%s %d>\n", ptr_var_data->ptrs->name, ptr_var_data->index->data, ptr_var_data->var->name, ptr_var_data->var->data);
+        printf("<"); str_print(ptr_var_data->ptrs->name);
+        printf("[%d]=", ptr_var_data->index->data); str_print(ptr_var_data->var->name);
+        printf(" %d>\n", ptr_var_data->var->data);
     }
     interpretator_next_op=interpretator_next_op->next;
 }
@@ -1098,12 +1100,15 @@ void interpretator_pointers_alloc()
     ptrs_alloc=(PointersAlloc*)data->data;
 
     ptrs_alloc->ptrs->ilength=ptrs_alloc->length->data;
+
     ptrs_alloc->ptrs->data=malloc(sizeof(PointerData) * ptrs_alloc->ptrs->ilength);
     for(j=0; j<ptrs_alloc->ptrs->ilength; j++)
     {
         ptrs_alloc->ptrs->data[j].data=malloc(BITS);
         ptrs_alloc->ptrs->data[j].type=UNDEFINED;
     }
+
+    ptrs_alloc->ptrs->uninitialized=0;
 
     if(debug)
     {
