@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+extern const char ERROR, OK;
+
 extern Stack *stack_functions;
 extern RunData *run_alloc, *run_tmp;
 extern Tree *fun;
@@ -122,9 +124,7 @@ char parser_putc()
     if(type==0)
     {
         str_free(new_string);
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
+        return ERROR;
     }
 
     if(disasm)
@@ -139,7 +139,7 @@ char parser_putc()
 
     run_alloc=new_run_data(PUTC, (char*)putc_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_element_init()
@@ -148,9 +148,7 @@ char parser_element_init()
     if(new_string==0)
     {
         str_free(new_string);
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
+        return ERROR;
     }
 
     if(disasm)
@@ -166,7 +164,7 @@ char parser_element_init()
     element_alloc->isz=0;
 
     add_type(cur_function, (char*)element_alloc, new_string, ELEMENT);
-    return 1;
+    return OK;
 }
 
 char parser_ptrs_init()
@@ -175,9 +173,7 @@ char parser_ptrs_init()
     if(new_string==0)
     {
         str_free(new_string);
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
+        return ERROR;
     }
 
     if(disasm)
@@ -194,7 +190,7 @@ char parser_ptrs_init()
     ptrs_alloc->ilength=0;
 
     add_type(cur_function, (char*)ptrs_alloc, new_string, PTRS);
-    return 1;
+    return OK;
 }
 
 char parser_array_init()
@@ -203,9 +199,7 @@ char parser_array_init()
     if(new_string==0)
     {
         str_free(new_string);
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
+        return ERROR;
     }
 
     if(disasm)
@@ -223,7 +217,7 @@ char parser_array_init()
     arr_alloc->uninitialized=1;
 
     add_type(cur_function, (char*)arr_alloc, new_string, ARRAY);
-    return 1;
+    return OK;
 }
 
 char parser_var_init()
@@ -232,9 +226,7 @@ char parser_var_init()
     if(new_string==0)
     {
         str_free(new_string);
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
+        return ERROR;
     }
 
     if(disasm)
@@ -249,7 +241,7 @@ char parser_var_init()
     var_alloc->count=0;
 
     add_type(cur_function, (char*)var_alloc, new_string, INTEGER);
-    return 1;
+    return OK;
 }
 
 char parser_const_init()
@@ -258,9 +250,7 @@ char parser_const_init()
     if(new_string==0)
     {
         str_free(new_string);
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
+        return ERROR;
     }
 
     const_alloc=malloc(sizeof(Const));
@@ -275,7 +265,7 @@ char parser_const_init()
     }
 
     add_type(cur_function, (char*)const_alloc, new_string, CONST);
-    return 1;
+    return OK;
 }
 
 char parser_const_string_init()
@@ -286,9 +276,7 @@ char parser_const_string_init()
     if(new_string==0)
     {
         str_free(new_string);
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
+        return ERROR;
     }
 
     const_string_alloc=malloc(sizeof(ConstString));
@@ -307,7 +295,7 @@ char parser_const_string_init()
     }
 
     add_type(cur_function, (char*)const_string_alloc, new_string, CONST_STRING);
-    return 1;
+    return OK;
 }
 
 char parser_assignment()
@@ -320,11 +308,7 @@ char parser_assignment()
 
     type=(Type*)get_parser_op_all(parser_string_code, cur_function);str_print(type->name);
     if(type==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+        return ERROR;
 
     if(disasm)
     {
@@ -338,11 +322,7 @@ char parser_assignment()
     {
         op1=(Type*)get_parser_op_all(parser_string_code, cur_function);
         if(op1==0)
-        {
-            parser_free_functions(fun);
-            stack_free(stack_functions);
-            return 0;
-        }
+            return ERROR;
 
         if(disasm)
         {
@@ -354,11 +334,7 @@ char parser_assignment()
         case CONST:
             op2=(Type*)get_parser_op(parser_string_code, cur_function);
             if(op2==0)
-            {
-                parser_free_functions(fun);
-                stack_free(stack_functions);
-                return 0;
-            }
+                return ERROR;
 
             el_const_alloc=malloc(sizeof(ElementConst));
 
@@ -382,11 +358,7 @@ char parser_assignment()
         case INTEGER:
             op2=(Type*)get_parser_op(parser_string_code, cur_function);
             if(op2==0)
-            {
-                parser_free_functions(fun);
-                stack_free(stack_functions);
-                return 0;
-            }
+                return ERROR;
 
             el_var_alloc=malloc(sizeof(ElementVar));
 
@@ -401,11 +373,7 @@ char parser_assignment()
         case ARRAY:
             op2=(Type*)get_parser_op(parser_string_code, cur_function);
             if(op2==0)
-            {
-                parser_free_functions(fun);
-                stack_free(stack_functions);
-                return 0;
-            }
+                return ERROR;
 
             el_arr_alloc=malloc(sizeof(ElementArray));
 
@@ -420,11 +388,7 @@ char parser_assignment()
         case PTRS:
             op2=(Type*)get_parser_op(parser_string_code, cur_function);
             if(op2==0)
-            {
-                parser_free_functions(fun);
-                stack_free(stack_functions);
-                return 0;
-            }
+                return ERROR;
 
             el_ptr_alloc=malloc(sizeof(ElementPtr));
 
@@ -454,11 +418,7 @@ char parser_assignment()
     {
         op1=(Type*)get_parser_op_all(parser_string_code, cur_function);
         if(op1==0)
-        {
-            parser_free_functions(fun);
-            stack_free(stack_functions);
-            return 0;
-        }
+            return ERROR;
 
         if(disasm)
             str_print(op1->name);
@@ -505,11 +465,7 @@ char parser_assignment()
         case ARRAY:
             op2=(Type*)get_parser_op(parser_string_code, cur_function);
             if(op2==0)
-            {
-                parser_free_functions(fun);
-                stack_free(stack_functions);
-                return 0;
-            }
+                return ERROR;
 
             var_arr_alloc=malloc(sizeof(VarArray));
 
@@ -519,10 +475,8 @@ char parser_assignment()
             if(var_arr_alloc->arr->uninitialized)
             {
                 printf("array '%s' is uninitialized\n", var_arr_alloc->arr->name);
-                parser_free_functions(fun);
-                stack_free(stack_functions);
                 free(var_arr_alloc);
-                return 0;
+                return ERROR;
             }
 
             var_arr_alloc->var->uninitialized=0;
@@ -533,11 +487,7 @@ char parser_assignment()
         case PTRS:
             op2=(Type*)get_parser_op(parser_string_code, cur_function);
             if(op2==0)
-            {
-                parser_free_functions(fun);
-                stack_free(stack_functions);
-                return 0;
-            }
+                return ERROR;
 
             var_ptr_alloc=malloc(sizeof(VarPtr));
 
@@ -554,11 +504,7 @@ char parser_assignment()
         case ELEMENT:
             op2=(Type*)get_parser_op(parser_string_code, cur_function);
             if(op2==0)
-            {
-                parser_free_functions(fun);
-                stack_free(stack_functions);
-                return 0;
-            }
+                return ERROR;
 
             var_el_alloc=malloc(sizeof(ElementConst));
 
@@ -579,19 +525,11 @@ char parser_assignment()
     {
         op1=(Type*)get_parser_op(parser_string_code, cur_function);
         if(op1==0)
-        {
-            parser_free_functions(fun);
-            stack_free(stack_functions);
-            return 0;
-        }
+            return ERROR;
 
         op2=(Type*)get_parser_op_all(parser_string_code, cur_function);
         if(op2==0)
-        {
-            parser_free_functions(fun);
-            stack_free(stack_functions);
-            return 0;
-        }
+            return ERROR;
 
         switch(op2->type)
         {
@@ -628,11 +566,7 @@ char parser_assignment()
         case ARRAY:
             op3=(Type*)get_parser_op(parser_string_code, cur_function);
             if(op3==0)
-            {
-                parser_free_functions(fun);
-                stack_free(stack_functions);
-                return 0;
-            }
+                return ERROR;
 
             arr_arr_alloc=malloc(sizeof(ArrayArray));
 
@@ -672,19 +606,11 @@ char parser_assignment()
     {
         op1=(Type*)get_parser_op(parser_string_code, cur_function);
         if(op1==0)
-        {
-            parser_free_functions(fun);
-            stack_free(stack_functions);
-            return 0;
-        }
+            return ERROR;
 
         op2=(Type*)get_parser_op_all(parser_string_code, cur_function);
         if(op2==0)
-        {
-            parser_free_functions(fun);
-            stack_free(stack_functions);
-            return 0;
-        }
+            return ERROR;
 
         switch(op2->type)
         {
@@ -732,11 +658,7 @@ char parser_assignment()
 
         case PTRS:
             if(type->data==op2->data)
-            {
-                parser_free_functions(fun);
-                stack_free(stack_functions);
-                return 0;
-            }
+                return ERROR;
 
             ptr_ptr_alloc=malloc(sizeof(PointerPtr));
 
@@ -763,7 +685,7 @@ char parser_assignment()
     }
 
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_loop()
@@ -799,18 +721,14 @@ char parser_loop()
     }
 
     push(cur_function->pos, (char*)run_alloc);
-    return 1;
+    return OK;
 }
 
 char parser_if()
 {
     type=(Type*)get_parser_op_all(parser_string_code, cur_function);
     if(type==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+        return ERROR;
 
     if_alloc=malloc(sizeof(If));
 
@@ -847,7 +765,7 @@ char parser_if()
     }
 
     push(cur_function->pos, (char*)run_alloc);
-    return 1;
+    return OK;
 }
 
 char parser_break()
@@ -862,7 +780,7 @@ char parser_break()
 
     run_alloc=(RunData*)new_run_data(BREAK, break_alloc);
     break_alloc->loop=add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_continue()
@@ -877,7 +795,7 @@ char parser_continue()
 
     run_alloc=(RunData*)new_run_data(CONTINUE, continue_alloc);
     continue_alloc->loop=add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_function()
@@ -889,13 +807,9 @@ char parser_function()
     {
         if(tree_add(cur_function->functions, (char*)function_tmp, function_cmp))
         {
-            printf("function ");
-            str_print(new_string);
-            printf(" defined\n");
-            parser_free_functions(fun);
-            stack_free(stack_functions);
+            printf("function "); str_print(new_string); printf(" defined\n");
             parser_free_function(function_tmp);
-            return 0;
+            return ERROR;
         }
     }
     else
@@ -915,7 +829,7 @@ char parser_function()
 
     push(stack_functions, (char*)cur_function);
     cur_function=function_tmp;
-    return 1;
+    return OK;
 }
 
 char parser_end()
@@ -931,9 +845,7 @@ char parser_end()
     else
     {
         printf("END without begin\n");
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
+        return ERROR;
     }
 
     if(disasm)
@@ -942,7 +854,7 @@ char parser_end()
         disasm_level--;
         for(i=0; i<disasm_level; i++) printf("    "); printf("END\n\n");
     }
-    return 1;
+    return OK;
 }
 
 char parser_call()
@@ -953,14 +865,10 @@ char parser_call()
     call_alloc->fun=find_global_function(cur_function->functions, stack_functions, new_string);
     if(call_alloc->fun==0)
     {
-        printf("function ");
-        str_print(new_string);
-        printf(" not found\n");
-        stack_free(stack_functions);
-        parser_free_functions(fun);
+        printf("function "); str_print(new_string); printf(" not found\n");
         str_free(new_string);
         free(call_alloc);
-        return 0;
+        return ERROR;
     }
     str_free(new_string);
 
@@ -973,18 +881,14 @@ char parser_call()
 
     run_alloc=(RunData*)new_run_data(CALL, (char*)call_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_inc()
 {
     type=(Type*)get_parser_op_all(parser_string_code, cur_function);
     if(type==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+        return ERROR;
 
     INC_alloc=malloc(sizeof(Increment));
 
@@ -998,18 +902,14 @@ char parser_inc()
     INC_alloc->var=(Number*)type->data;
     run_alloc=(RunData*)new_run_data(INC, (char*)INC_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_dec()
 {
     type=(Type*)get_parser_op_all(parser_string_code, cur_function);
     if(type==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+        return ERROR;
 
     DEC_alloc=malloc(sizeof(Increment));
 
@@ -1023,33 +923,30 @@ char parser_dec()
     DEC_alloc->var=(Number*)type->data;
     run_alloc=(RunData*)new_run_data(DEC, (char*)DEC_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_get_3op()
 {
     type=(Type*)get_parser_op_all(parser_string_code, cur_function);
     if(type==0)
-        return 0;
+        return ERROR;
 
     op1=(Type*)get_parser_op_all(parser_string_code, cur_function);
     if(op1==0)
-        return 0;
+        return ERROR;
 
     op2=(Type*)get_parser_op_all(parser_string_code, cur_function);
     if(op2==0)
-        return 0;
-    return 1;
+        return ERROR;
+
+    return OK;
 }
 
 char parser_add()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     add_alloc=malloc(sizeof(Add));
 
@@ -1071,17 +968,13 @@ char parser_add()
 
     run_alloc=(RunData*)new_run_data(ADD, (char*)add_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_sub()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     sub_alloc=malloc(sizeof(Sub));
 
@@ -1103,17 +996,13 @@ char parser_sub()
 
     run_alloc=(RunData*)new_run_data(SUB, (char*)sub_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_mul()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     mul_alloc=malloc(sizeof(Mul));
 
@@ -1135,17 +1024,13 @@ char parser_mul()
 
     run_alloc=(RunData*)new_run_data(MUL, (char*)mul_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_div()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     div_alloc=malloc(sizeof(Div));
 
@@ -1167,17 +1052,13 @@ char parser_div()
 
     run_alloc=(RunData*)new_run_data(DIV, (char*)div_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_shr()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     shr_alloc=malloc(sizeof(Shr));
 
@@ -1199,17 +1080,13 @@ char parser_shr()
 
     run_alloc=(RunData*)new_run_data(SHR, (char*)shr_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_shl()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     shl_alloc=malloc(sizeof(Shl));
 
@@ -1231,17 +1108,13 @@ char parser_shl()
 
     run_alloc=(RunData*)new_run_data(SHL, (char*)shl_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_xor()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     xor_alloc=malloc(sizeof(Xor));
 
@@ -1263,17 +1136,13 @@ char parser_xor()
 
     run_alloc=(RunData*)new_run_data(XOR, (char*)xor_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_and()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     and_alloc=malloc(sizeof(And));
 
@@ -1295,17 +1164,13 @@ char parser_and()
 
     run_alloc=(RunData*)new_run_data(AND, (char*)and_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_or()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     or_alloc=malloc(sizeof(Or));
 
@@ -1327,26 +1192,18 @@ char parser_or()
 
     run_alloc=(RunData*)new_run_data(OR, (char*)or_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_not()
 {
     type=(Type*)get_parser_op_all(parser_string_code, cur_function);
     if(type==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+        return ERROR;
 
     op1=(Type*)get_parser_op_all(parser_string_code, cur_function);
     if(op1==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+        return ERROR;
 
     not_alloc=malloc(sizeof(Not));
 
@@ -1365,17 +1222,13 @@ char parser_not()
 
     run_alloc=(RunData*)new_run_data(NOT, (char*)not_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_eq()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     eq_alloc=malloc(sizeof(Equal));
 
@@ -1397,17 +1250,13 @@ char parser_eq()
 
     run_alloc=(RunData*)new_run_data(EQ, (char*)eq_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_neq()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     neq_alloc=malloc(sizeof(NotEqual));
 
@@ -1429,17 +1278,13 @@ char parser_neq()
 
     run_alloc=(RunData*)new_run_data(NEQ, (char*)neq_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_gt()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     gt_alloc=malloc(sizeof(GreatherThan));
 
@@ -1461,17 +1306,13 @@ char parser_gt()
 
     run_alloc=(RunData*)new_run_data(GT, (char*)gt_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_lt()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     lt_alloc=malloc(sizeof(LesserThan));
 
@@ -1493,17 +1334,13 @@ char parser_lt()
 
     run_alloc=(RunData*)new_run_data(LT, (char*)lt_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_ge()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     ge_alloc=malloc(sizeof(GreatherThanOrEqual));
 
@@ -1525,17 +1362,13 @@ char parser_ge()
 
     run_alloc=(RunData*)new_run_data(GE, (char*)ge_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_le()
 {
-    if(parser_get_3op()==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+    if(parser_get_3op()==ERROR)
+        return ERROR;
 
     le_alloc=malloc(sizeof(LesserThanOrEqual));
 
@@ -1557,26 +1390,18 @@ char parser_le()
 
     run_alloc=(RunData*)new_run_data(LE, (char*)le_alloc);
     add_body_element();
-    return 1;
+    return OK;
 }
 
 char parser_alloc()
 {
     type=(Type*)get_parser_op_all(parser_string_code, cur_function);
     if(type==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+        return ERROR;
 
     op1=(Type*)get_parser_op_all(parser_string_code, cur_function);
     if(op1==0)
-    {
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
-    }
+        return ERROR;
 
     switch(type->type)
     {
@@ -1592,11 +1417,7 @@ char parser_alloc()
     case ARRAY:
         op2=(Type*)get_parser_op_all(parser_string_code, cur_function);
         if(op2==0)
-        {
-            parser_free_functions(fun);
-            stack_free(stack_functions);
-            return 0;
-        }
+            return ERROR;
 
         arr_alloc_alloc=malloc(sizeof(ArrayAlloc));
 
@@ -1620,11 +1441,9 @@ char parser_alloc()
 
     default:
         printf("ALLOC only for PTRS,ARRAY,ELEMENT\n");
-        parser_free_functions(fun);
-        stack_free(stack_functions);
-        return 0;
+        return ERROR;
     }
 
     add_body_element();
-    return 1;
+    return OK;
 }

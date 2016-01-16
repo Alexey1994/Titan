@@ -146,7 +146,7 @@ void list_delete(List *list, int position)
     return;
 }
 
-void list_clear(List *list)
+void list_clear(List *list, void (*free_data)(char *data))
 {
     struct ListNode *i=list->begin, *del;
 
@@ -154,7 +154,7 @@ void list_clear(List *list)
     {
         del=i;
         i=i->next;
-        free(del->data);
+        free_data(del->data);
         free(del);
     }
 
@@ -163,7 +163,7 @@ void list_clear(List *list)
     list->end=0;
 }
 
-void list_free(List *list)
+void list_free(List *list, void (*free_data)(char *data))
 {
     struct ListNode *i=list->begin, *del;
 
@@ -171,7 +171,7 @@ void list_free(List *list)
     {
         del=i;
         i=i->next;
-        free(del->data);
+        free_data(del->data);
         free(del);
     }
 

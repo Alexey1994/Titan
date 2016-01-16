@@ -321,7 +321,7 @@ int main()
     String *data;
     Tree *tree=0;
 
-    data=lexer("example.txt");
+    data=lexer("example.ti");
 
     struct ListNode *l=data->end;
     while(l)

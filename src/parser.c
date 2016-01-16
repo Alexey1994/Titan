@@ -8,6 +8,7 @@
 #include "parser_free.h"
 #include "parser_operations.h"
 
+extern const char ERROR, OK;
 extern char debug;
 
 Stack *stack_functions;
@@ -189,7 +190,7 @@ RunData *new_run_data(char type, char *data)
 
 Function* find_function(Tree *tree_cur_function, String *s)
 {
-    Tree *i=tree_cur_function;
+    TreeNode *i=tree_cur_function->root;
     int comparision;
 
     while(i)
@@ -276,8 +277,8 @@ Function* new_function(String *name)
     ret->name=name;
     ret->body=list_init();
     ret->pos=stack_init();
-    ret->types=0;
-    ret->functions=0;
+    ret->types=tree_init();
+    ret->functions=tree_init();
 
     return ret;
 }
@@ -285,17 +286,18 @@ Function* new_function(String *name)
 Type *find_type(Tree *types, String *name)
 {
     int cmp;
+    TreeNode *i=types->root;
 
-    while(types)
+    while(i)
     {
-        cmp=str_comparision(name, ((Type*)types->data)->name);
+        cmp=str_comparision(name, ((Type*)i->data)->name);
 
         if(cmp==0)
-            return (Type*)types->data;
+            return (Type*)i->data;
         else if(cmp<0)
-            types=(Tree*)types->left;
+            i=(TreeNode*)i->left;
         else
-            types=(Tree*)types->right;
+            i=(TreeNode*)i->right;
     }
 
     return 0;
@@ -331,14 +333,24 @@ Tree *parse(String *s)
     parser_string_code=s;
 
     stack_functions=stack_init();
-    fun=tree_init((char*)new_function(str_init("")));
-    cur_function=fun->data;
+    fun=tree_init();
+
+    tree_add(fun, (char*)new_function(str_init("")), function_cmp);
+    cur_function=fun->root->data;
 
     parser_table_init();
 
     while(s->length>0)
-        if(parser_table[str_pop(s)]()==0)
+    {
+        char d=str_pop(s);
+        if(parser_table[d]()==ERROR)
+        {
+            printf("%d", d);
+            parser_free_functions(fun);
+            stack_free(stack_functions);
             return 0;
+        }
+    }
 
     if(stack_functions->begin)
     {

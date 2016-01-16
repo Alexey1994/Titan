@@ -3,40 +3,34 @@
 
 int braces_count=0;
 
-void print_variables(Tree *node)
+static void print_variables_data(Type *type)
 {
-    Type *data;
     int i;
-    if(node!=0)
-    {
-        print_variables((Tree*)node->left);
-        data=(Type*)node->data;
-        for(i=0; i<braces_count; i++)
-            printf("   ");
+
+    for(i=0; i<braces_count; i++)
         printf("   ");
-        str_print(data->name);
-        printf("\n");
-        print_variables((Tree*)node->right);
-    }
+    printf("   ");
+    str_print(type->name);
+    printf("\n");
 }
 
-void print_functions(Tree *node)
+static void print_functions_data(Function *function)
 {
-    Function *data;
     int i;
-    if(node)
-    {
-        print_functions((Tree*)node->left);
-        data=(Function*)node->data;
-        braces_count++;
 
-        for(i=0; i<braces_count; i++)
-            printf("   ");
-        str_print(data->name); printf(":\n");
-        print_variables((Tree*)data->types);
+    braces_count++;
 
-        print_functions(data->functions);
-        braces_count--;
-        print_functions((Tree*)node->right);
-    }
+    for(i=0; i<braces_count; i++)
+        printf("   ");
+
+    str_print(function->name); printf(":\n");
+    tree_print(function->types, print_variables_data);
+    print_functions(function->functions);
+
+    braces_count--;
+}
+
+void print_functions(Tree *tree)
+{
+    tree_print(tree, print_functions_data);
 }

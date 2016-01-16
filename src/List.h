@@ -14,8 +14,8 @@ typedef struct
 }List;
 
 List* list_init();
-void list_clear(List *list);
-void list_free(List *list);
+void list_clear(List *list, void (*free_data)(char *data));
+void list_free(List *list, void (*free_data)(char *data));
 
 void list_delete(List *list, int position);
 void list_insert(List *list, char *data, int position);

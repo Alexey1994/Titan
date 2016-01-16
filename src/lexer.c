@@ -22,7 +22,7 @@ int size_data=0,
 
 char c=0;
 
-void lexer_print_args(List *args)
+static void lexer_print_args(List *args)
 {
     struct ListNode *i=args->begin;
     Type *data;
@@ -40,27 +40,28 @@ void lexer_print_args(List *args)
 }
 
 int lexer_braces_count=0;
-void lexer_print_functions(Tree *node)
+
+static void lexer_print_functions_node(Function *function)
 {
-    Function *data;
     int i;
-    if(node)
-    {
-        lexer_print_functions((Tree*)node->left);
-        data=(Function*)node->data;
-        lexer_braces_count++;
 
-        for(i=0; i<lexer_braces_count; i++)
-            printf("   ");
-        str_print(data->name);
-        lexer_print_args(data->args);
-        printf(":\n");
-        //print_variables((Tree*)data->types);
+    lexer_braces_count++;
 
-        lexer_print_functions(data->functions);
-        lexer_braces_count--;
-        lexer_print_functions((Tree*)node->right);
-    }
+    for(i=0; i<lexer_braces_count; i++)
+        printf("   ");
+
+    str_print(function->name);
+    lexer_print_args(function->args);
+
+    printf(":\n");
+    //print_variables((Tree*)data->types);
+    lexer_print_functions(function->functions);
+    lexer_braces_count--;
+}
+
+void lexer_print_functions(Tree *tree)
+{
+    tree_print(tree, lexer_print_functions_node);
 }
 
 char is_number(char c)
@@ -377,7 +378,8 @@ String *lexer(char *name)
 
     String *tmp, *tmp2, *args=str_init("");
     Function *cur_function=new_function(str_init("")), *tmp_function, *function_alloc;
-    Tree *fun=tree_init((char*)cur_function);
+    Tree *fun=tree_init();//(char*)cur_function);
+    tree_add(fun, (char*)cur_function, function_cmp);
 
     Stack *stack_functions=stack_init();
 

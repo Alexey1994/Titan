@@ -1,7 +1,25 @@
 #include "parser_free.h"
 #include "String.h"
 #include "parser.h"
+#include "List.h"
 #include <stdlib.h>
+
+static void parser_free_function_body(RunData *data)
+{
+    switch(data->type)
+    {
+        case IF:
+            list_free(((If*)data->data)->eval, parser_free_function_body);
+            break;
+
+        case LOOP:
+            list_free(((Loop*)data->data)->eval, parser_free_function_body);
+            break;
+    }
+
+    free(data->data);
+    free(data);
+}
 
 void parser_free_type(Type *t)
 {
@@ -12,65 +30,16 @@ void parser_free_type(Type *t)
     free(t);
 }
 
-void parser_free_types(Tree *t)
+void parser_free_function(Function *function)
 {
-    if(t)
-    {
-        parser_free_types((Tree*)t->left);
-        parser_free_type((Type*)t->data);
-        parser_free_types((Tree*)t->right);
-        free(t);
-    }
-}
-
-void parser_free_function_body(List *body)
-{
-    struct ListNode *i=body->begin, *del;
-    RunData *del_data;
-
-    while(i)
-    {
-        del=i;
-        i=i->next;
-
-        del_data=del->data;
-        switch(del_data->type)
-        {
-            case IF: parser_free_function_body(((If*)del_data->data)->eval); break;
-            case LOOP: parser_free_function_body(((Loop*)del_data->data)->eval); break;
-        }
-
-        free(del_data->data);
-        free(del->data);
-        free(del);
-    }
-
-    free(body);
-}
-
-void parser_free_function(Function *f)
-{
-    //str_print(f->name);printf(": ");
-
-    str_free(f->name);
-    stack_free(f->pos);
-    parser_free_function_body(f->body);
-    parser_free_types((Tree*)f->types);
-    free(f);
+    str_free(function->name);
+    stack_free(function->pos);
+    list_free(function->body, parser_free_function_body);
+    tree_free(function->types, parser_free_type);
+    free(function);
 }
 
 void parser_free_functions(Tree *f)
 {
-    Function *data;
-
-    if(f)
-    {
-        parser_free_functions((Tree*)f->left);
-        data=((Function*)f->data)->functions;
-        parser_free_function((Function*)f->data);
-        //printf("\n");
-        parser_free_functions(data);
-        parser_free_functions((Tree*)f->right);
-        free(f);
-    }
+    tree_free(f, parser_free_function);
 }

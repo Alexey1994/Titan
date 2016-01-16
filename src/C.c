@@ -9,13 +9,13 @@ FILE *c_file;
 
 Number *c_var;
 
-void c_define_all_variables(Tree *types)
+void c_define_all_variables(TreeNode *types)
 {
     Type *data;
 
     if(types)
     {
-        c_define_all_variables((Tree*)types->left);
+        c_define_all_variables((TreeNode*)types->left);
 
         data=(Type*)types->data;
         switch(data->type)
@@ -109,7 +109,7 @@ RunData *c_data;
 
 void translate_C(Tree *functions)
 {
-    Function *f=(Function*)functions->data;
+    Function *f=(Function*)functions->root->data;
 
     c_table_init();
     c_tree=functions;

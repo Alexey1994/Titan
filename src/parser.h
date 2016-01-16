@@ -178,6 +178,7 @@ typedef struct
 {
     String *name;
     Tree *types, *functions;
+    char **local_variables;
     List *args;
     List *body;
     Stack *pos;

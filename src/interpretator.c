@@ -91,7 +91,7 @@ RunData *data;
 
 void run(Tree *fun)
 {
-    Function *f=fun->data;
+    Function *f=fun->root->data;
     interpretator_table_init();
     interpretator_return_place=stack_init();
 
