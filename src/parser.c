@@ -16,12 +16,6 @@ Type *new_type(String *name, int type, char *data);
 
 char (*parser_table[256])();
 
-char parser_error()
-{
-    printf("file not valid\n");
-    return 0;
-}
-
 void parser_table_init()
 {
     int i;
@@ -99,13 +93,6 @@ int get_num(String *s)
 {
     int i,ret=1;
 
-    if(s->length<BITS)
-    {
-        str_push(s, 0);
-        printf("size of constant lesser BITS\n");
-        return 0;
-    }
-
     for(i=0; i<BITS; i++)
         ((char*)&ret)[i]=str_pop(s);
     return ret;
@@ -151,9 +138,7 @@ Type *get_parser_op_all(String *s, Function *cur_function)
 
     if(op==0)
     {
-        printf("variable '");
-        str_print(new_string);
-        printf("' not found\n");
+        printf("variable '"); str_print(new_string); printf("' not found\n");
         str_free(new_string);
         return 0;
     }
@@ -207,10 +192,13 @@ Function* find_function(Tree *tree_cur_function, String *s)
     return 0;
 }
 
-Function *find_global_function(Tree *tree_cur_function, Stack *functions, String *s)
+Function *find_global_function(Function *cur_function, Tree *tree_cur_function, Stack *functions, String *s)
 {
     NodeStack *i=functions->begin;
     Function *data;
+
+    if(str_comparision(cur_function->name, s)==0)
+        return cur_function;
 
     data=find_function(tree_cur_function, s);
     if(data)
@@ -242,7 +230,13 @@ Type *find_global_type(Function *cur_function, Stack *functions, String *s)
         data=i->data;
         type=find_type(data->types, s);
         if(type)
+        {
+            switch(type->type)
+            {
+                case INTEGER: ((Number*)type->data)->is_closure=1; break;
+            }
             return type;
+        }
         i=i->previouse;
     }
 
@@ -326,7 +320,6 @@ Function *cur_function, *function_tmp;
 String *new_string, *parser_string_code;
 
 Type *type, *op1, *op2, *op3;
-
 
 Tree *parse(String *s)
 {

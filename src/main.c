@@ -262,7 +262,7 @@ void arifmetic_test()
                  CONST_STRING_INIT, 'q',0, 2,0,0,0, 'a','l',
 
                  ASSIGNMENT, 's',0, 'c',0,
-
+/*
                  ADD, 's',0, 's',0, 's',0,
                  MUL, 's',0, 's',0, 's',0,
                  DIV, 's',0, 's',0, 's',0,
@@ -283,7 +283,17 @@ void arifmetic_test()
                  LT, 's',0, 's',0, 's',0,
                  GT, 's',0, 's',0, 's',0,
                  LE, 's',0, 's',0, 's',0,
-                 GE, 's',0, 's',0, 's',0,
+                 GE, 's',0, 's',0, 's',0,*/
+
+                 FUNCTION, 'f',0,
+                    INT_INIT, 'i',0,
+                    CONST_INIT, 'c',0, 1,0,0,0,
+                    ASSIGNMENT, 'i',0, 's',0,
+
+                    CALL, 'f',0,
+                 END,
+
+                 CALL, 'f',0
                 };
     size_data=sizeof(data);
 
@@ -306,6 +316,9 @@ void arifmetic_test()
 
 int main()
 {
+    debug=1;
+    disasm=1;
+    arifmetic_test(); return 0;
     //functions_test(); return 0;
     //c_test();
     //return 0;

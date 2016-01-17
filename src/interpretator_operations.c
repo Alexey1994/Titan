@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void interpretator_init_local_vars(Type *type);
+
+extern char *interpretator_stack;
+extern char *interpretator_stack_head;
+
 extern RunData *data;
 extern Tree *interpretator_tree;
 
@@ -126,10 +131,12 @@ void interpretator_call()
         printf("<call "); str_print(call_data->fun->name), printf("()>\n");
     }
 
+    tree_print(call_data->fun->types, interpretator_init_local_vars);
+
     if(call_data->fun->body)
     {
-        push(interpretator_return_place, interpretator_next_op->next);
-        //push(stack_pos, interpretator_next_op->next);
+        if(interpretator_next_op->next)
+            push(interpretator_return_place, interpretator_next_op->next);
         interpretator_next_op=call_data->fun->body->begin;
     }
     else
@@ -355,11 +362,22 @@ void interpretator_putc()
 void interpretator_var_var()
 {
     var_var_data=(VarVar*)data->data;
-    var_var_data->var->data=var_var_data->in->data;
+/*
+    if(var_var_data->var->is_closure)
+    {
+        if(var_var_data->in->is_closure)
+            *(int*)var_var_data->var->data=var_var_data->in->data;
+        else
+            *(int*)var_var_data->var->data=*(int*)var_var_data->in->data;
+    }
+    else
+        var_var_data->var->data=var_var_data->in->data;*/
+    *(int*)var_var_data->var->data=*(int*)var_var_data->in->data;
+
     if(debug)
     {
         printf("<"); str_print(var_var_data->var->name); printf("=");
-        str_print(var_var_data->in->name); printf(" %d>\n", var_var_data->var->data);
+        str_print(var_var_data->in->name); printf(" %d>\n", *(int*)var_var_data->var->data);
     }
     interpretator_next_op=interpretator_next_op->next;
 }
@@ -367,12 +385,26 @@ void interpretator_var_var()
 void interpretator_var_const()
 {
     var_const_data=(VarConst*)data->data;
-    var_const_data->var->data=var_const_data->in->data;
-    if(debug)
+
+    if(var_const_data->var->is_closure)
     {
-        printf("<"); str_print(var_const_data->var->name); printf("=");
-        str_print(var_const_data->in->name); printf(" %d>\n", var_const_data->var->data);
+        *(int*)var_const_data->var->data=var_const_data->in->data;
+        if(debug)
+        {
+            printf("<"); str_print(var_const_data->var->name); printf("=");
+            str_print(var_const_data->in->name); printf(" %d>\n", *(int*)var_const_data->var->data);
+        }
     }
+    else
+    {
+        var_const_data->var->data=var_const_data->in->data;
+        if(debug)
+        {
+            printf("<"); str_print(var_const_data->var->name); printf("=");
+            str_print(var_const_data->in->name); printf(" %d>\n", var_const_data->var->data);
+        }
+    }
+
     interpretator_next_op=interpretator_next_op->next;
 }
 
@@ -382,17 +414,17 @@ void interpretator_var_el()
 
     var_el_data=(VarElement*)data->data;
 
-    if(var_el_data->in->isz-var_el_data->index->data < BITS)
+    if((int)var_el_data->in->isz-(int)var_el_data->index->data < BITS)
     {
         for(j=0; j<var_el_data->in->isz; j++)
-            ((char*)(&var_el_data->var->data))[j]=var_el_data->in->data[j+var_el_data->index->data];
+            ((char*)(&var_el_data->var->data))[j]=var_el_data->in->data[j+(int)var_el_data->index->data];
         for(; j<BITS; j++)
-            ((char*)(&var_el_data->var->data))[j]=var_el_data->in->data[j+var_el_data->index->data];
+            ((char*)(&var_el_data->var->data))[j]=var_el_data->in->data[j+(int)var_el_data->index->data];
     }
     else
     {
         for(j=0; j<BITS; j++)
-            ((char*)(&var_el_data->var->data))[j]=var_el_data->in->data[j+var_el_data->index->data];
+            ((char*)(&var_el_data->var->data))[j]=var_el_data->in->data[j+(int)var_el_data->index->data];
     }
     if(debug)
     {
@@ -430,11 +462,11 @@ void interpretator_var_array()
 
     if(var_arr_data->arr->isz>=BITS)
         for(j=0; j<BITS; j++)
-            ((char*)&var_arr_data->var->data)[j]=(var_arr_data->arr->data+var_arr_data->arr->isz*var_arr_data->index->data)[j];
+            ((char*)&var_arr_data->var->data)[j]=(var_arr_data->arr->data+(int)var_arr_data->arr->isz*(int)var_arr_data->index->data)[j];
     else
     {
-        for(j=0; j<var_arr_data->arr->isz; j++)
-            ((char*)&var_arr_data->var->data)[j]=*(var_arr_data->arr->data+var_arr_data->arr->isz*var_arr_data->index->data+j);
+        for(j=0; j<(int)var_arr_data->arr->isz; j++)
+            ((char*)&var_arr_data->var->data)[j]=*(var_arr_data->arr->data+(int)var_arr_data->arr->isz*(int)var_arr_data->index->data+j);
         for(; j<BITS; j++)
             ((char*)&var_arr_data->var->data)[j]=0;
     }
@@ -479,20 +511,20 @@ void interpretator_el_var()
     }
     else
     {
-        if(el_var_data->el->isz-el_var_data->index->data >= BITS)
+        if((int)el_var_data->el->isz-(int)el_var_data->index->data >= BITS)
         {
-            *(int*)(el_var_data->el->data+el_var_data->index->data)=el_var_data->in->data;
+            *(int*)(el_var_data->el->data+(int)el_var_data->index->data)=el_var_data->in->data;
         }
         else
         {
-            for(j=0; j<el_var_data->el->isz-el_var_data->index->data; j++)
-                el_var_data->el->data[j+el_var_data->index->data]=((char*)&el_var_data->in->data)[j];
+            for(j=0; j<el_var_data->el->isz-(int)el_var_data->index->data; j++)
+                el_var_data->el->data[j+(int)el_var_data->index->data]=((char*)&el_var_data->in->data)[j];
         }
     }
 
     if(debug)
     {
-        printf("<element=var %d index:%d>\n", *(int*)(el_var_data->el->data+el_var_data->index->data), el_var_data->index->data);
+        printf("<element=var %d index:%d>\n", *(int*)(el_var_data->el->data+(int)el_var_data->index->data), el_var_data->index->data);
     }
     interpretator_next_op=interpretator_next_op->next;
 }
@@ -503,19 +535,19 @@ void interpretator_el_const()
 
     el_const_data=(ElementConst*)data->data;
 
-    if(el_const_data->el->isz-el_const_data->index->data >= BITS)
+    if(el_const_data->el->isz-(int)el_const_data->index->data >= BITS)
     {
         for(j=0; j<BITS; j++)
-            el_const_data->el->data[j+el_const_data->index->data]=((char*)&el_const_data->in->data)[j];
+            el_const_data->el->data[j+(int)el_const_data->index->data]=((char*)&el_const_data->in->data)[j];
     }
     else
     {
-        for(j=0; j<el_const_data->el->isz-el_const_data->index->data; j++)
-            el_const_data->el->data[j+el_const_data->index->data]=((char*)&el_const_data->in->data)[j];
+        for(j=0; j<el_const_data->el->isz-(int)el_const_data->index->data; j++)
+            el_const_data->el->data[j+(int)el_const_data->index->data]=((char*)&el_const_data->in->data)[j];
     }
     if(debug)
     {
-        printf("<element=const %d>\n", *(int*)(el_const_data->el->data+el_const_data->index->data));
+        printf("<element=const %d>\n", *(int*)(el_const_data->el->data+(int)el_const_data->index->data));
     }
     interpretator_next_op=interpretator_next_op->next;
 }
@@ -539,11 +571,11 @@ void interpretator_el_ptrs()
 {
     el_ptr_data=(ElementPtr*)data->data;
 
-    if(el_ptr_data->index->data>=el_ptr_data->ptrs->ilength || el_ptr_data->ptrs->data[el_ptr_data->index->data].type!=ELEMENT)
+    if(el_ptr_data->index->data>=el_ptr_data->ptrs->ilength || el_ptr_data->ptrs->data[(int)el_ptr_data->index->data].type!=ELEMENT)
         return 0;
 
     free(el_ptr_data->el->data);
-    el_ptr_data->el=(Element*)el_ptr_data->ptrs->data[el_ptr_data->index->data].data;
+    el_ptr_data->el=(Element*)el_ptr_data->ptrs->data[(int)el_ptr_data->index->data].data;
 
     if(debug)
     {
@@ -563,7 +595,7 @@ void interpretator_el_array()
     el_arr_data->el->data=(char*)malloc(el_arr_data->arr->isz);
 
     for(j=0; j<el_arr_data->el->isz; j++)
-        el_arr_data->el->data[j]=el_arr_data->arr->data[el_arr_data->arr->isz*el_arr_data->index->data+j];
+        el_arr_data->el->data[j]=el_arr_data->arr->data[el_arr_data->arr->isz*(int)el_arr_data->index->data+j];
     if(debug)
     {
         printf("<element=array>\n");
@@ -598,8 +630,8 @@ void interpretator_ptrs_var()
     ptr_var_data=(PointerVar*)data->data;
     //for(j=0; j<BITS; j++)
     //ptr_var_data->ptrs->data[ptr_var_data->index->data].data[j]=((char*)&ptr_var_data->var)[j];
-    ptr_var_data->ptrs->data[ptr_var_data->index->data].type=INTEGER;
-    ptr_var_data->ptrs->data[ptr_var_data->index->data].data=ptr_var_data->var;
+    ptr_var_data->ptrs->data[(int)ptr_var_data->index->data].type=INTEGER;
+    ptr_var_data->ptrs->data[(int)ptr_var_data->index->data].data=ptr_var_data->var;
     if(debug)
     {
         printf("<"); str_print(ptr_var_data->ptrs->name);
@@ -619,8 +651,8 @@ void interpretator_ptrs_const()
         return 0;
     }
 
-    ptr_const_data->ptrs->data[ptr_const_data->index->data].data=(char*)ptr_const_data->in;
-    ptr_const_data->ptrs->data[ptr_const_data->index->data].type=CONST;
+    ptr_const_data->ptrs->data[(int)ptr_const_data->index->data].data=(char*)ptr_const_data->in;
+    ptr_const_data->ptrs->data[(int)ptr_const_data->index->data].type=CONST;
     interpretator_next_op=interpretator_next_op->next;
 }
 
@@ -634,8 +666,8 @@ void interpretator_ptrs_el()
         return 0;
     }
 
-    ptr_el_data->ptrs->data[ptr_el_data->index->data].data=(char*)ptr_el_data->in;
-    ptr_el_data->ptrs->data[ptr_el_data->index->data].type=ELEMENT;
+    ptr_el_data->ptrs->data[(int)ptr_el_data->index->data].data=(char*)ptr_el_data->in;
+    ptr_el_data->ptrs->data[(int)ptr_el_data->index->data].type=ELEMENT;
     interpretator_next_op=interpretator_next_op->next;
 }
 
@@ -649,8 +681,8 @@ void interpretator_ptrs_ptrs()
         return 0;
     }
 
-    ptr_ptr_data->ptrs->data[ptr_ptr_data->index->data].data=(char*)ptr_ptr_data->ptrs_in;
-    ptr_ptr_data->ptrs->data[ptr_ptr_data->index->data].type=PTRS;
+    ptr_ptr_data->ptrs->data[(int)ptr_ptr_data->index->data].data=(char*)ptr_ptr_data->ptrs_in;
+    ptr_ptr_data->ptrs->data[(int)ptr_ptr_data->index->data].type=PTRS;
     interpretator_next_op=interpretator_next_op->next;
 }
 
@@ -664,8 +696,8 @@ void interpretator_ptrs_array()
         return 0;
     }
 
-    ptr_arr_data->ptrs->data[ptr_arr_data->index->data].data=(char*)ptr_arr_data->arr;
-    ptr_arr_data->ptrs->data[ptr_arr_data->index->data].type=ARRAY;
+    ptr_arr_data->ptrs->data[(int)ptr_arr_data->index->data].data=(char*)ptr_arr_data->arr;
+    ptr_arr_data->ptrs->data[(int)ptr_arr_data->index->data].type=ARRAY;
     interpretator_next_op=interpretator_next_op->next;
 }
 
@@ -689,14 +721,14 @@ void interpretator_array_var()
     if(arr_var_data->arr->isz>BITS)
     {
         for(j=0; j<BITS; j++)
-            arr_var_data->arr->data[arr_var_data->index->data * arr_var_data->arr->isz + j]=((char*)&arr_var_data->var->data)[j];
+            arr_var_data->arr->data[(int)arr_var_data->index->data * arr_var_data->arr->isz + j]=((char*)&arr_var_data->var->data)[j];
         for(; j<arr_var_data->arr->isz; j++)
-            arr_var_data->arr->data[arr_var_data->index->data * arr_var_data->arr->isz + j]=0;
+            arr_var_data->arr->data[(int)arr_var_data->index->data * arr_var_data->arr->isz + j]=0;
     }
     else
     {
         for(j=0; j<arr_var_data->arr->isz; j++)
-            arr_var_data->arr->data[arr_var_data->index->data * arr_var_data->arr->isz + j]=((char*)&arr_var_data->var->data)[j];
+            arr_var_data->arr->data[(int)arr_var_data->index->data * arr_var_data->arr->isz + j]=((char*)&arr_var_data->var->data)[j];
     }
     if(debug)
     {
@@ -720,15 +752,15 @@ void interpretator_array_const()
     if(arr_const_data->arr->isz>=BITS)
     {
         for(j=0; j<BITS; j++)
-            arr_const_data->arr->data[arr_const_data->index->data*arr_const_data->arr->isz+j]=(
+            arr_const_data->arr->data[(int)arr_const_data->index->data*arr_const_data->arr->isz+j]=(
                 (char*)&arr_const_data->in->data)[j];
         for(; j<arr_const_data->arr->isz; j++)
-            arr_const_data->arr->data[arr_const_data->index->data*arr_const_data->arr->isz+j]=0;
+            arr_const_data->arr->data[(int)arr_const_data->index->data*arr_const_data->arr->isz+j]=0;
     }
     else
     {
         for(j=0; j<arr_const_data->arr->isz; j++)
-            arr_const_data->arr->data[arr_const_data->index->data*arr_const_data->arr->isz+j]=((char*)&arr_const_data->in->data)[j];
+            arr_const_data->arr->data[(int)arr_const_data->index->data*arr_const_data->arr->isz+j]=((char*)&arr_const_data->in->data)[j];
     }
     interpretator_next_op=interpretator_next_op->next;
 }
@@ -742,12 +774,12 @@ void interpretator_array_el()
     if(arr_el_data->arr->isz>=arr_el_data->in->isz)
     {
         for(j=0; j<arr_el_data->in->isz; j++)
-            arr_el_data->arr->data[arr_el_data->index->data*arr_el_data->arr->isz+j]=arr_el_data->in->data[j];
+            arr_el_data->arr->data[(int)arr_el_data->index->data*arr_el_data->arr->isz+j]=arr_el_data->in->data[j];
     }
     else
     {
         for(j=0; j<arr_el_data->arr->isz; j++)
-            arr_el_data->arr->data[arr_el_data->index->data*arr_el_data->arr->isz+j]=arr_el_data->in->data[j];
+            arr_el_data->arr->data[(int)arr_el_data->index->data*arr_el_data->arr->isz+j]=arr_el_data->in->data[j];
     }
     interpretator_next_op=interpretator_next_op->next;
 }
@@ -756,13 +788,13 @@ void interpretator_array_ptrs()
 {
     arr_ptr_data=(ArrayPtr*)data->data;
 
-    if(arr_ptr_data->ptrs->data[arr_ptr_data->index->data].type!=ARRAY)
+    if(arr_ptr_data->ptrs->data[(int)arr_ptr_data->index->data].type!=ARRAY)
     {
         printf("not Array\n");
         return 0;
     }
 
-    arr_tmp=(Array*)arr_ptr_data->ptrs->data[arr_ptr_data->index->data].data;
+    arr_tmp=(Array*)arr_ptr_data->ptrs->data[(int)arr_ptr_data->index->data].data;
     arr_ptr_data->arr->data=arr_tmp->data;
     arr_ptr_data->arr->ilength=arr_tmp->ilength;
     arr_ptr_data->arr->isz=arr_tmp->isz;
@@ -789,12 +821,12 @@ void interpretator_array_array()
     if(arr_arr_data->arr->isz>=arr_arr_data->arr_in->isz)
     {
         for(j=0; j<arr_arr_data->arr_in->isz; j++)
-            arr_arr_data->arr->data[arr_arr_data->arr->isz*arr_arr_data->index->data+j]=arr_arr_data->arr_in->data[arr_arr_data->arr_in->isz*arr_arr_data->index_in->data+j];
+            arr_arr_data->arr->data[arr_arr_data->arr->isz*(int)arr_arr_data->index->data+j]=arr_arr_data->arr_in->data[arr_arr_data->arr_in->isz*(int)arr_arr_data->index_in->data+j];
     }
     else
     {
         for(j=0; j<arr_arr_data->arr->isz; j++)
-            arr_arr_data->arr->data[arr_arr_data->arr->isz*arr_arr_data->index->data+j]=arr_arr_data->arr_in->data[arr_arr_data->arr_in->isz*arr_arr_data->index_in->data+j];
+            arr_arr_data->arr->data[arr_arr_data->arr->isz*(int)arr_arr_data->index->data+j]=arr_arr_data->arr_in->data[arr_arr_data->arr_in->isz*(int)arr_arr_data->index_in->data+j];
     }
 
     if(debug)
@@ -834,20 +866,43 @@ void interpretator_dec()
 void interpretator_add()
 {
     add_data=(Add*)data->data;
-    add_data->var_rez->data=add_data->var1->data+add_data->var2->data;
+
+    int a, b, *c;
+/*
+    if(add_data->var_rez->is_closure)
+        c=add_data->var_rez->data;
+    else
+        c=&add_data->var_rez->data;
+
+    if(add_data->var1->is_closure)
+        a=*(int*)add_data->var1->data;
+    else
+        a=add_data->var1->data;
+
+    if(add_data->var2->is_closure)
+        b=*(int*)add_data->var2->data;
+    else
+        b=add_data->var2->data;
+*/
+    c=add_data->var_rez->data;
+    a=*(int*)add_data->var1->data;
+    b=*(int*)add_data->var2->data;
+    *c=a+b;
+
     if(debug)
     {
         printf("<"); str_print(add_data->var_rez->name); printf("=");
         str_print(add_data->var1->name); printf("+");
-        str_print(add_data->var2->name); printf("=%d>\n", add_data->var_rez->data);
+        str_print(add_data->var2->name); printf("=%d>\n", *c);
     }
+
     interpretator_next_op=interpretator_next_op->next;
 }
 
 void interpretator_sub()
 {
     sub_data=(Sub*)data->data;
-    sub_data->var_rez->data=sub_data->var1->data-sub_data->var2->data;
+    sub_data->var_rez->data=(int)sub_data->var1->data-(int)sub_data->var2->data;
     if(debug)
     {
         printf("<"); str_print(sub_data->var_rez->name); printf("=");
@@ -860,7 +915,7 @@ void interpretator_sub()
 void interpretator_mul()
 {
     mul_data=(Mul*)data->data;
-    mul_data->var_rez->data=mul_data->var1->data*mul_data->var2->data;
+    mul_data->var_rez->data=(int)mul_data->var1->data*(int)mul_data->var2->data;
     if(debug)
     {
         printf("<"); str_print(mul_data->var_rez->name); printf("=");
@@ -873,7 +928,7 @@ void interpretator_mul()
 void interpretator_div()
 {
     div_data=(Div*)data->data;
-    div_data->var_rez->data=div_data->var1->data/div_data->var2->data;
+    div_data->var_rez->data=(int)div_data->var1->data/(int)div_data->var2->data;
     if(debug)
     {
         printf("<"); str_print(div_data->var_rez->name); printf("=");
@@ -887,7 +942,7 @@ void interpretator_shr()
 {
     Shr *shr_data=(Shr*)data->data;
 
-    shr_data->var_rez->data=shr_data->var->data >> shr_data->shift->data;
+    shr_data->var_rez->data=(int)shr_data->var->data >> (int)shr_data->shift->data;
     if(debug)
     {
         printf("<"); str_print(shr_data->var_rez->name); printf("=");
@@ -901,7 +956,7 @@ void interpretator_shl()
 {
     Shl *shl_data=(Shl*)data->data;
 
-    shl_data->var_rez->data=shl_data->var->data << shl_data->shift->data;
+    shl_data->var_rez->data=(int)shl_data->var->data << (int)shl_data->shift->data;
 
     if(debug)
     {
@@ -917,7 +972,7 @@ void interpretator_xor()
 {
     Xor *xor_data=(Xor*)data->data;
 
-    xor_data->var_rez->data=xor_data->var1->data ^ xor_data->var2->data;
+    xor_data->var_rez->data=(int)xor_data->var1->data ^ (int)xor_data->var2->data;
 
     if(debug)
     {
@@ -933,7 +988,7 @@ void interpretator_and()
 {
     And *and_data=(And*)data->data;
 
-    and_data->var_rez->data=and_data->var1->data & and_data->var2->data;
+    and_data->var_rez->data=(int)and_data->var1->data & (int)and_data->var2->data;
 
     if(debug)
     {
@@ -949,7 +1004,7 @@ void interpretator_or()
 {
     Or *or_data=(Or*)data->data;
 
-    or_data->var_rez->data=or_data->var1->data & or_data->var2->data;
+    or_data->var_rez->data=(int)or_data->var1->data & (int)or_data->var2->data;
 
     if(debug)
     {
@@ -965,7 +1020,7 @@ void interpretator_not()
 {
     Not *not_data=(Not*)data->data;
 
-    not_data->var_rez->data=!not_data->var->data;
+    not_data->var_rez->data=!(int)not_data->var->data;
 
     if(debug)
     {
@@ -982,7 +1037,7 @@ void interpretator_eq()
 
     //((Equal*)data->data)->var->data=((Equal*)data->data)->left->data==((Equal*)data->data)->right->data;
 
-    eq_data->var->data=eq_data->left->data==eq_data->right->data;
+    eq_data->var->data=(int)eq_data->left->data==(int)eq_data->right->data;
     interpretator_next_op=interpretator_next_op->next;
 }
 
@@ -990,7 +1045,7 @@ void interpretator_neq()
 {
     neq_data=(NotEqual*)data->data;
 
-    neq_data->var->data=neq_data->left->data!=neq_data->right->data;
+    neq_data->var->data=(int)neq_data->left->data!=(int)neq_data->right->data;
 
     if(debug)
     {
@@ -1004,7 +1059,7 @@ void interpretator_gt()
 {
     gt_data=(GreatherThan*)data->data;
 
-    gt_data->var->data=gt_data->left->data>gt_data->right->data;
+    gt_data->var->data=(int)gt_data->left->data > (int)gt_data->right->data;
 
     if(debug)
     {
@@ -1018,7 +1073,7 @@ void interpretator_lt()
 {
     lt_data=(LesserThan*)data->data;
 
-    lt_data->var->data=lt_data->left->data<lt_data->right->data;
+    lt_data->var->data=(int)lt_data->left->data < (int)lt_data->right->data;
 
     if(debug)
     {
@@ -1032,7 +1087,7 @@ void interpretator_ge()
 {
     ge_data=(GreatherThanOrEqual*)data->data;
 
-    ge_data->var->data=ge_data->left->data>=ge_data->right->data;
+    ge_data->var->data=(int)ge_data->left->data >= (int)ge_data->right->data;
 
     if(debug)
     {
@@ -1046,7 +1101,7 @@ void interpretator_le()
 {
     le_data=(LesserThanOrEqual*)data->data;
 
-    le_data->var->data=le_data->left->data<=le_data->right->data;
+    le_data->var->data=(int)le_data->left->data <= (int)le_data->right->data;
 
     if(debug)
     {
@@ -1087,8 +1142,8 @@ void interpretator_array_alloc()
         printf("<alloc length %d size %d>\n", arr_alloc_data->length->data, arr_alloc_data->sz->data);
     }
 
-    arr_alloc_data->arr->data=malloc(arr_alloc_data->sz->data * arr_alloc_data->length->data);
-    for(j=0; j<arr_alloc_data->sz->data * arr_alloc_data->length->data; j++)
+    arr_alloc_data->arr->data=malloc((int)arr_alloc_data->sz->data * (int)arr_alloc_data->length->data);
+    for(j=0; j<(int)arr_alloc_data->sz->data * (int)arr_alloc_data->length->data; j++)
         arr_alloc_data->arr->data[j]=1;
     interpretator_next_op=interpretator_next_op->next;
 }

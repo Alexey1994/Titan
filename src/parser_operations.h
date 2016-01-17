@@ -1,6 +1,8 @@
 #ifndef PARSER_OPERATIONS_H_INCLUDED
 #define PARSER_OPERATIONS_H_INCLUDED
 
+char parser_error();
+
 char parser_putc();
 
 char parser_element_init();

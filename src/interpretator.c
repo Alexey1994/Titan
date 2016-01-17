@@ -5,6 +5,9 @@
 #include "String.h"
 #include "interpretator_operations.h"
 
+char *interpretator_stack;
+char *interpretator_stack_head;
+
 char run_function(List *list);
 
 void interpretator_print(Type *putc_data);
@@ -85,6 +88,36 @@ void interpretator_table_init()
     interpretator_table[POINTERS_ALLOC]=interpretator_pointers_alloc;
 }
 
+void interpretator_init_local_vars(Type *type)
+{
+    Number *num;
+
+    switch(type->type)
+    {
+        case INTEGER:
+            num=type->data;
+
+            if(num->is_closure)
+            {
+                num->data=malloc(BITS);
+                printf("[%d ", num->data); str_print(num->name); printf(" malloc]");
+            }
+            else
+            {
+                printf("[%d ", num->data); str_print(num->name); printf(" stack]");
+                num->data=interpretator_stack_head;
+                interpretator_stack_head+=BITS;
+            }
+            break;
+    }
+}
+
+static void interpretator_closure_functions_init(Function *function)
+{
+    tree_print(function->types, interpretator_init_local_vars);
+    tree_print(function->functions, interpretator_closure_functions_init);
+}
+
 Tree *interpretator_tree;
 struct ListNode *interpretator_next_op;
 RunData *data;
@@ -94,25 +127,23 @@ void run(Tree *fun)
     Function *f=fun->root->data;
     interpretator_table_init();
     interpretator_return_place=stack_init();
+    push(interpretator_return_place, 0);
 
     interpretator_tree=fun;
     interpretator_next_op=f->body->begin;
 
+    tree_print(fun, interpretator_closure_functions_init);
+    interpretator_stack=malloc(STACK_LENGTH);
+    interpretator_stack_head=interpretator_stack;
+
     NodeStack *cur_pos;
 
-    while(1)
+    while(interpretator_next_op)
     {
-        while(interpretator_next_op==0)
-        {
-            if(interpretator_return_place->begin==0)
-            {
-                stack_free(interpretator_return_place);
-                return;
-            }
-            interpretator_next_op=pop(interpretator_return_place);
-        }
-
         data=(RunData*)interpretator_next_op->data;
         interpretator_table[data->type]();
+
+        if(interpretator_next_op==0)
+            interpretator_next_op=pop(interpretator_return_place);
     }
 }

@@ -121,7 +121,8 @@ typedef struct
 {
     char type;
     char uninitialized;
-    int data;
+    char is_closure;
+    char *data;
     String *name;
     int count;
 }Number;
@@ -491,7 +492,7 @@ extern Id *id;
 Type *get_parser_op_all(String *s, Function *cur_function);
 char tree_contains(Function *cur_function, String *name);
 Type *find_type(Tree *types, String *name);
-Function *find_global_function(Tree *tree_cur_function, Stack *functions, String *s);
+Function *find_global_function(Function *cur_function, Tree *tree_cur_function, Stack *functions, String *s);
 Function* find_function(Tree *tree_cur_function, String *s);
 Type *find_global_type(Function *cur_function, Stack *functions, String *s);
 

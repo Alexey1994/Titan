@@ -801,7 +801,7 @@ get_print:
             tree_data_tmp=find_global_type(cur_function, stack_functions, tmp);
             if(tree_data_tmp==0)
             {
-                tmp_function=find_global_function(cur_function->functions, stack_functions, tmp);
+                tmp_function=find_global_function(cur_function, cur_function->functions, stack_functions, tmp);
                 if(tmp_function)
                 {
                     skip();

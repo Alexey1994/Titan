@@ -25,8 +25,6 @@ Const *const_alloc;
 Element *element_alloc;
 Pointers *ptrs_alloc;
 Array *arr_alloc;
-Pointers *ptrs_alloc;
-Element *element_alloc;
 ConstString *const_string_alloc;
 
 ElementVar *el_var_alloc;
@@ -118,6 +116,12 @@ struct ListNode* add_body_element()
     }
 }
 
+char parser_error()
+{
+    printf("file not valid\n");
+    return ERROR;
+}
+
 char parser_putc()
 {
     type=(Type*)get_parser_op_all(parser_string_code, cur_function);
@@ -127,15 +131,14 @@ char parser_putc()
         return ERROR;
     }
 
+    putc_alloc=malloc(sizeof(Putc));
+    putc_alloc->data=type;
+
     if(disasm)
     {
         int i;
         for(i=0; i<disasm_level; i++) printf("    "); printf("PUTC "); str_print(type->name); printf("\n");
     }
-
-    putc_alloc=malloc(sizeof(Putc));
-
-    putc_alloc->data=type;
 
     run_alloc=new_run_data(PUTC, (char*)putc_alloc);
     add_body_element();
@@ -176,18 +179,18 @@ char parser_ptrs_init()
         return ERROR;
     }
 
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("PTRS_INIT "); str_print(new_string); printf("\n");
-    }
-
     ptrs_alloc=malloc(sizeof(Pointers));
     ptrs_alloc->name=new_string;
 
     ptrs_alloc->uninitialized=1;
     ptrs_alloc->data=0;
     ptrs_alloc->ilength=0;
+
+    if(disasm)
+    {
+        int i;
+        for(i=0; i<disasm_level; i++) printf("    "); printf("PTRS_INIT "); str_print(new_string); printf("\n");
+    }
 
     add_type(cur_function, (char*)ptrs_alloc, new_string, PTRS);
     return OK;
@@ -202,12 +205,6 @@ char parser_array_init()
         return ERROR;
     }
 
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("ARRAY_INIT "); str_print(new_string); printf("\n");
-    }
-
     arr_alloc=malloc(sizeof(Array));
     arr_alloc->name=new_string;
 
@@ -215,6 +212,12 @@ char parser_array_init()
     arr_alloc->ilength=0;
     arr_alloc->isz=0;
     arr_alloc->uninitialized=1;
+
+    if(disasm)
+    {
+        int i;
+        for(i=0; i<disasm_level; i++) printf("    "); printf("ARRAY_INIT "); str_print(new_string); printf("\n");
+    }
 
     add_type(cur_function, (char*)arr_alloc, new_string, ARRAY);
     return OK;
@@ -239,6 +242,7 @@ char parser_var_init()
     var_alloc->name=new_string;
     var_alloc->uninitialized=1;
     var_alloc->count=0;
+    var_alloc->is_closure=0;
 
     add_type(cur_function, (char*)var_alloc, new_string, INTEGER);
     return OK;
@@ -247,7 +251,7 @@ char parser_var_init()
 char parser_const_init()
 {
     new_string=get_parser_init_name(parser_string_code, cur_function);
-    if(new_string==0)
+    if(new_string==0 || parser_string_code->length<BITS)
     {
         str_free(new_string);
         return ERROR;
@@ -306,7 +310,7 @@ char parser_assignment()
         for(i=0; i<disasm_level; i++) printf("    "); printf("ASSIGNMENT ");
     }
 
-    type=(Type*)get_parser_op_all(parser_string_code, cur_function);str_print(type->name);
+    type=(Type*)get_parser_op_all(parser_string_code, cur_function);
     if(type==0)
         return ERROR;
 
@@ -862,7 +866,7 @@ char parser_call()
     new_string=next_token(parser_string_code);
 
     call_alloc=malloc(sizeof(Call));
-    call_alloc->fun=find_global_function(cur_function->functions, stack_functions, new_string);
+    call_alloc->fun=find_global_function(cur_function, cur_function->functions, stack_functions, new_string);
     if(call_alloc->fun==0)
     {
         printf("function "); str_print(new_string); printf(" not found\n");
