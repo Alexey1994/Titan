@@ -9,10 +9,10 @@
 
 Существуют 3 типа переменных:
 Z-целое число, объявляется следующим образом:
-Z number=90
+  Z number=90
 
 Элемент произвольной длины:
-Element e=new 12 - e имеет размер 12 байт
+  Element e=new 12 - e имеет размер 12 байт
 
 Массив указателей на всё:
   Z x=0, y=1
@@ -39,17 +39,17 @@ Element e=new 12 - e имеет размер 12 байт
 
 Вызов функций в доработке:
 
-  function f(Z a)
-    print a
-    
-    function g(Z a)
+    function f(Z a)
       print a
+      
+      function g(Z a)
+        print a
+      end
+      
+      function h()
+        print a
+      end
     end
-    
-    function h()
-      print a
-    end
-  end
 
 На втором этапе функция Tree *parse(String *s) производит разбор байткода, составленного из следующих конструкций:
 
