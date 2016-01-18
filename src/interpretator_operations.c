@@ -124,14 +124,43 @@ void interpretator_continue()
 
 void interpretator_call()
 {
+    struct ListNode *i, *j;
+    Number *num, *num2;
+    Type *type, *type2;
+
     call_data=(Call*)data->data;
 
-    if(debug)
+    i=call_data->args->begin;
+    j=call_data->fun->args->begin;
+    while(i)
     {
-        printf("<call "); str_print(call_data->fun->name), printf("()>\n");
+        //j->data=i->data;
+
+        type=j->data;
+        type2=i->data;
+
+        switch(type->type)
+        {
+            case INTEGER:
+                num=type->data;
+                //str_print(num->name);
+                //printf(" %d", *(int*)num->data);
+
+                switch(type2->type)
+                {
+                case INTEGER:
+                    num2=type2->data;
+                    num->data=num2->data;
+                }
+
+                break;
+        }
+
+        i=i->next;
+        j=j->next;
     }
 
-    tree_print(call_data->fun->types, interpretator_init_local_vars);
+    //tree_print(call_data->fun->types, interpretator_init_local_vars);
 
     if(call_data->fun->body)
     {
@@ -141,6 +170,11 @@ void interpretator_call()
     }
     else
         interpretator_next_op=interpretator_next_op->next;
+
+    if(debug)
+    {
+        printf("<call "); str_print(call_data->fun->name), printf("()>\n");
+    }
 }
 
 int print_ptrs_level=0;
@@ -386,23 +420,12 @@ void interpretator_var_const()
 {
     var_const_data=(VarConst*)data->data;
 
-    if(var_const_data->var->is_closure)
+    *(int*)var_const_data->var->data=var_const_data->in->data;
+
+    if(debug)
     {
-        *(int*)var_const_data->var->data=var_const_data->in->data;
-        if(debug)
-        {
-            printf("<"); str_print(var_const_data->var->name); printf("=");
-            str_print(var_const_data->in->name); printf(" %d>\n", *(int*)var_const_data->var->data);
-        }
-    }
-    else
-    {
-        var_const_data->var->data=var_const_data->in->data;
-        if(debug)
-        {
-            printf("<"); str_print(var_const_data->var->name); printf("=");
-            str_print(var_const_data->in->name); printf(" %d>\n", var_const_data->var->data);
-        }
+        printf("<"); str_print(var_const_data->var->name); printf("=");
+        str_print(var_const_data->in->name); printf(" %d>\n", *(int*)var_const_data->var->data);
     }
 
     interpretator_next_op=interpretator_next_op->next;

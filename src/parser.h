@@ -179,7 +179,7 @@ typedef struct
 {
     String *name;
     Tree *types, *functions;
-    char **local_variables;
+    int length_args;
     List *args;
     List *body;
     Stack *pos;
@@ -381,6 +381,7 @@ typedef struct
 typedef struct
 {
     Function *fun;
+    List *args;
 }Call;
 
 typedef struct
@@ -498,5 +499,7 @@ Type *find_global_type(Function *cur_function, Stack *functions, String *s);
 
 Tree *parse(String *s);
 String *next_token(String *s);
+
+void add_type(Tree *types, char *data, String *name_data, int type);
 
 #endif // PARSER_H_INCLUDED

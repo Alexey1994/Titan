@@ -146,6 +146,17 @@ void list_delete(List *list, int position)
     return;
 }
 
+void list_print(List *list, void (*print_data)(char *data))
+{
+    struct ListNode *i=list->begin;
+
+    while(i)
+    {
+        print_data(i->data);
+        i=i->next;
+    }
+}
+
 void list_clear(List *list, void (*free_data)(char *data))
 {
     struct ListNode *i=list->begin, *del;

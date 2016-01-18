@@ -285,15 +285,21 @@ void arifmetic_test()
                  LE, 's',0, 's',0, 's',0,
                  GE, 's',0, 's',0, 's',0,*/
 
-                 FUNCTION, 'f',0,
+                 FUNCTION, 'f',0, 2,0,0,0,
+                    INT_INIT, 'a',0,
+                    INT_INIT, 'b',0,
+                    PUTC, 'a',0,
+                    /*
+                    INT_INIT, 'b',0,
                     INT_INIT, 'i',0,
                     CONST_INIT, 'c',0, 1,0,0,0,
                     ASSIGNMENT, 'i',0, 's',0,
+                    ADD, 'i',0, 'i',0, 'i',0,*/
 
-                    CALL, 'f',0,
+                    //CALL, 'f',0,
                  END,
 
-                 CALL, 'f',0
+                 CALL, 'f',0, 's',0, 's',0,
                 };
     size_data=sizeof(data);
 

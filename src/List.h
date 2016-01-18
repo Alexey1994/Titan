@@ -17,6 +17,8 @@ List* list_init();
 void list_clear(List *list, void (*free_data)(char *data));
 void list_free(List *list, void (*free_data)(char *data));
 
+void list_print(List *list, void (*print_data)(char *data));
+
 void list_delete(List *list, int position);
 void list_insert(List *list, char *data, int position);
 

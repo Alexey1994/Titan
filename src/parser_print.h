@@ -4,6 +4,7 @@
 #include "tree.h"
 #include "parser.h"
 
-void print_variables(TreeNode *node);
+void print_function(Function *function);
+void print_functions(Tree *tree);
 
 #endif // PARSER_PRINT_H_INCLUDED

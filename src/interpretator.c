@@ -132,9 +132,10 @@ void run(Tree *fun)
     interpretator_tree=fun;
     interpretator_next_op=f->body->begin;
 
-    tree_print(fun, interpretator_closure_functions_init);
     interpretator_stack=malloc(STACK_LENGTH);
     interpretator_stack_head=interpretator_stack;
+
+    tree_print(fun, interpretator_closure_functions_init);
 
     NodeStack *cur_pos;
 

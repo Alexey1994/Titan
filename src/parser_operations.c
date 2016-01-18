@@ -166,7 +166,7 @@ char parser_element_init()
     element_alloc->uninitialized=1;
     element_alloc->isz=0;
 
-    add_type(cur_function, (char*)element_alloc, new_string, ELEMENT);
+    add_type(cur_function->types, (char*)element_alloc, new_string, ELEMENT);
     return OK;
 }
 
@@ -192,7 +192,7 @@ char parser_ptrs_init()
         for(i=0; i<disasm_level; i++) printf("    "); printf("PTRS_INIT "); str_print(new_string); printf("\n");
     }
 
-    add_type(cur_function, (char*)ptrs_alloc, new_string, PTRS);
+    add_type(cur_function->types, (char*)ptrs_alloc, new_string, PTRS);
     return OK;
 }
 
@@ -219,7 +219,7 @@ char parser_array_init()
         for(i=0; i<disasm_level; i++) printf("    "); printf("ARRAY_INIT "); str_print(new_string); printf("\n");
     }
 
-    add_type(cur_function, (char*)arr_alloc, new_string, ARRAY);
+    add_type(cur_function->types, (char*)arr_alloc, new_string, ARRAY);
     return OK;
 }
 
@@ -244,7 +244,13 @@ char parser_var_init()
     var_alloc->count=0;
     var_alloc->is_closure=0;
 
-    add_type(cur_function, (char*)var_alloc, new_string, INTEGER);
+    if(cur_function->length_args)
+    {
+        add_arg(cur_function->args, (char*)var_alloc, new_string, INTEGER);
+        cur_function->length_args--;
+    }
+    else
+        add_type(cur_function->types, (char*)var_alloc, new_string, INTEGER);
     return OK;
 }
 
@@ -268,7 +274,7 @@ char parser_const_init()
         for(i=0; i<disasm_level; i++) printf("    "); printf("CONST_INIT "); str_print(new_string); printf(" %d\n", const_alloc->data);
     }
 
-    add_type(cur_function, (char*)const_alloc, new_string, CONST);
+    add_type(cur_function->types, (char*)const_alloc, new_string, CONST);
     return OK;
 }
 
@@ -298,7 +304,7 @@ char parser_const_string_init()
         for(i=0; i<disasm_level; i++) printf("    "); printf("CONST_STRING_INIT "); str_print(new_string); printf("\"%s\"\n", const_string_alloc->data);
     }
 
-    add_type(cur_function, (char*)const_string_alloc, new_string, CONST_STRING);
+    add_type(cur_function->types, (char*)const_string_alloc, new_string, CONST_STRING);
     return OK;
 }
 
@@ -807,18 +813,13 @@ char parser_function()
     new_string=next_token(parser_string_code);
     function_tmp=new_function(new_string);
 
-    if(cur_function->functions)
+    function_tmp->length_args=get_num(parser_string_code);
+
+    if(tree_add(cur_function->functions, (char*)function_tmp, function_cmp))
     {
-        if(tree_add(cur_function->functions, (char*)function_tmp, function_cmp))
-        {
-            printf("function "); str_print(new_string); printf(" defined\n");
-            parser_free_function(function_tmp);
-            return ERROR;
-        }
-    }
-    else
-    {
-        cur_function->functions=tree_init((char*)function_tmp);
+        printf("function "); str_print(new_string); printf(" defined\n");
+        parser_free_function(function_tmp);
+        return ERROR;
     }
 
     if(disasm)
@@ -827,7 +828,7 @@ char parser_function()
         printf("\n");
         for(i=0; i<disasm_level; i++) printf("    "); printf("FUNCTION ");
         for(i=0; i<disasm_level; i++) printf("    ");str_print(new_string);
-        printf("\n");
+        printf(" %d args\n", function_tmp->length_args);
         disasm_level++;
     }
 
@@ -844,6 +845,11 @@ char parser_end()
     }
     else if(stack_functions->begin)
     {
+        if(cur_function->length_args)
+        {
+            printf("arguments for '"); str_print(cur_function->name); printf("' not initialized\n");
+            return ERROR;
+        }
         cur_function=(Function*)pop(stack_functions);
     }
     else
@@ -863,10 +869,19 @@ char parser_end()
 
 char parser_call()
 {
+    int i;
+
+    if(cur_function->length_args)
+    {
+        printf("arguments for "); str_print(cur_function->name); printf(" not initialized");
+        return ERROR;
+    }
+
     new_string=next_token(parser_string_code);
 
     call_alloc=malloc(sizeof(Call));
     call_alloc->fun=find_global_function(cur_function, cur_function->functions, stack_functions, new_string);
+
     if(call_alloc->fun==0)
     {
         printf("function "); str_print(new_string); printf(" not found\n");
@@ -876,9 +891,26 @@ char parser_call()
     }
     str_free(new_string);
 
+    call_alloc->args=list_init();
+
+    i=call_alloc->fun->args->length;
+    while(i)
+    {
+        new_string=next_token(parser_string_code);
+        type=find_global_type(cur_function, stack_functions, new_string);
+        if(type==0)
+        {
+            printf("argument '"); str_print(new_string); printf("' not found\n");
+            str_free(new_string);
+            return ERROR;
+        }
+        list_push(call_alloc->args, type);
+        str_free(new_string);
+        i--;
+    }
+
     if(disasm)
     {
-        int i;
         for(i=0; i<disasm_level;i++) printf("    "); printf("CALL ");
         str_print(call_alloc->fun->name); printf("\n");
     }

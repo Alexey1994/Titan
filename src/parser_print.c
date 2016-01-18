@@ -1,9 +1,18 @@
 #include "parser_print.h"
 #include <stdio.h>
 
-int braces_count=0;
+static int braces_count=0;
+static int args_count, args_length;
 
-static void print_variables_data(Type *type)
+static void print_arg(Type *type)
+{
+    args_count++;
+    str_print(type->name);
+    if(args_count!=args_length)
+        printf(",");
+}
+
+static void print_variable(Type *type)
 {
     int i;
 
@@ -14,7 +23,7 @@ static void print_variables_data(Type *type)
     printf("\n");
 }
 
-static void print_functions_data(Function *function)
+void print_function(Function *function)
 {
     int i;
 
@@ -23,8 +32,14 @@ static void print_functions_data(Function *function)
     for(i=0; i<braces_count; i++)
         printf("   ");
 
-    str_print(function->name); printf(":\n");
-    tree_print(function->types, print_variables_data);
+    args_count=0;
+    args_length=function->args->length;
+    str_print(function->name);
+    printf("(");
+    list_print(function->args, print_arg);
+    printf("):\n");
+
+    list_print(function->types, print_variable);
     print_functions(function->functions);
 
     braces_count--;
@@ -32,5 +47,5 @@ static void print_functions_data(Function *function)
 
 void print_functions(Tree *tree)
 {
-    tree_print(tree, print_functions_data);
+    tree_print(tree, print_function);
 }

@@ -36,6 +36,7 @@ void parser_free_function(Function *function)
     stack_free(function->pos);
     list_free(function->body, parser_free_function_body);
     tree_free(function->types, parser_free_type);
+    list_free(function->args, parser_free_type);
     free(function);
 }
 

@@ -215,6 +215,42 @@ Function *find_global_function(Function *cur_function, Tree *tree_cur_function, 
     return 0;
 }
 
+Type *find_arg(List *args, String *name)
+{
+    struct ListNode *i=args->begin;
+    Type *ret;
+
+    while(i)
+    {
+        ret=i->data;
+        if(str_comparision(ret->name, name)==0)
+            return ret;
+        i=i->next;
+    }
+
+    return 0;
+}
+
+Type *find_type(Tree *types, String *name)
+{
+    int cmp;
+    TreeNode *i=types->root;
+
+    while(i)
+    {
+        cmp=str_comparision(name, ((Type*)i->data)->name);
+
+        if(cmp==0)
+            return (Type*)i->data;
+        else if(cmp<0)
+            i=(TreeNode*)i->left;
+        else
+            i=(TreeNode*)i->right;
+    }
+
+    return 0;
+}
+
 Type *find_global_type(Function *cur_function, Stack *functions, String *s)
 {
     NodeStack *i=functions->begin;
@@ -225,10 +261,18 @@ Type *find_global_type(Function *cur_function, Stack *functions, String *s)
     if(type)
         return type;
 
+    type=find_arg(cur_function->args, s);
+    if(type)
+        return type;
+
     while(i)
     {
         data=i->data;
+
         type=find_type(data->types, s);
+        if(type==0)
+            type=find_arg(data->args, s);
+
         if(type)
         {
             switch(type->type)
@@ -271,43 +315,26 @@ Function* new_function(String *name)
     ret->name=name;
     ret->body=list_init();
     ret->pos=stack_init();
+    ret->args=list_init();
     ret->types=tree_init();
     ret->functions=tree_init();
 
     return ret;
 }
 
-Type *find_type(Tree *types, String *name)
+void add_type(Tree *types, char *data, String *name_data, int type)
 {
-    int cmp;
-    TreeNode *i=types->root;
-
-    while(i)
-    {
-        cmp=str_comparision(name, ((Type*)i->data)->name);
-
-        if(cmp==0)
-            return (Type*)i->data;
-        else if(cmp<0)
-            i=(TreeNode*)i->left;
-        else
-            i=(TreeNode*)i->right;
-    }
-
-    return 0;
+    tree_add(types, (char*)new_type(name_data, type, data), tree_type_cmp);
 }
 
-void add_type(Function *cur_function, char *data, String *name_data, int type)
+void add_arg(List *args, char *data, String *name, int type)
 {
-    if(cur_function->types)
-        tree_add(cur_function->types, (char*)new_type(name_data, type, data), tree_type_cmp);
-    else
-        cur_function->types=tree_init((char*)new_type(name_data, type, data));
+    list_push(args, (char*)new_type(name, type, data));
 }
 
 char tree_contains(Function *cur_function, String *name)
 {
-    if(find_function(cur_function->functions, name) || find_type(cur_function->types, name))
+    if(find_function(cur_function->functions, name) || find_type(cur_function->types, name) || find_arg(cur_function->args, name))
         return 1;
 
     return 0;
@@ -330,6 +357,7 @@ Tree *parse(String *s)
 
     tree_add(fun, (char*)new_function(str_init("")), function_cmp);
     cur_function=fun->root->data;
+    cur_function->length_args=0;
 
     parser_table_init();
 
