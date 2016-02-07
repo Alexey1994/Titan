@@ -4,33 +4,40 @@
 #include <stdlib.h>
 #include "String.h"
 #include "interpretator_operations.h"
+#include "interpretator_compiler.h"
 
-char *interpretator_stack;
-char *interpretator_stack_head;
+char      *interpretator_stack;
+char      *interpretator_stack_head;
+
+char       loop_not_break;
+
+Stack     *interpretator_return_place;
+NodeStack *cur_loop;
+
+void     (*interpretator_table[256])();
 
 char run_function(List *list);
-
 void interpretator_print(Type *putc_data);
 void interpretator_element_var();
 
-char loop_not_break;
-
-Stack *interpretator_return_place;
-NodeStack *cur_loop;
-
-void (*interpretator_table[256])();
-
 void interpretator_table_init()
 {
-    interpretator_table[LOOP]=interpretator_loop;
-    interpretator_table[IF]=interpretator_if;
+    interpretator_table[JMP]=interpretator_jmp;
+    interpretator_table[JZ]=interpretator_jz;
+    interpretator_table[JNZ]=interpretator_jnz;
+    interpretator_table[JE]=interpretator_je;
+    interpretator_table[JNE]=interpretator_jne;
+    interpretator_table[JLT]=interpretator_jlt;
+    interpretator_table[JGT]=interpretator_jgt;
+    interpretator_table[JLE]=interpretator_jle;
+    interpretator_table[JGE]=interpretator_jge;
 
     interpretator_table[BREAK]=interpretator_break;
     interpretator_table[CONTINUE]=interpretator_continue;
 
     interpretator_table[CALL]=interpretator_call;
 
-    interpretator_table[PUTC]=interpretator_putc;
+    interpretator_table[PRINT]=interpretator_putc;
 
     interpretator_table[INT_INT]=interpretator_var_var;
     interpretator_table[INT_CONST]=interpretator_var_const;
@@ -68,6 +75,11 @@ void interpretator_table_init()
     interpretator_table[MUL]=interpretator_mul;
     interpretator_table[DIV]=interpretator_div;
 
+    interpretator_table[FADD]=interpretator_fadd;
+    interpretator_table[FSUB]=interpretator_fsub;
+    interpretator_table[FMUL]=interpretator_fmul;
+    interpretator_table[FDIV]=interpretator_fdiv;
+
     interpretator_table[SHR]=interpretator_shr;
     interpretator_table[SHL]=interpretator_shl;
 
@@ -75,13 +87,6 @@ void interpretator_table_init()
     interpretator_table[AND]=interpretator_and;
     interpretator_table[OR]=interpretator_or;
     interpretator_table[NOT]=interpretator_not;
-
-    interpretator_table[EQ]=interpretator_eq;
-    interpretator_table[NEQ]=interpretator_neq;
-    interpretator_table[GT]=interpretator_gt;
-    interpretator_table[LT]=interpretator_lt;
-    interpretator_table[GE]=interpretator_ge;
-    interpretator_table[LE]=interpretator_le;
 
     interpretator_table[ELEMENT_ALLOC]=interpretator_element_alloc;
     interpretator_table[ARRAY_ALLOC]=interpretator_array_alloc;
@@ -94,7 +99,7 @@ void interpretator_init_local_vars(Type *type)
 
     switch(type->type)
     {
-        case INTEGER:
+        case INTEGER: case REAL:
             num=type->data;
 
             if(num->is_closure)
@@ -118,13 +123,16 @@ static void interpretator_closure_functions_init(Function *function)
     tree_print(function->functions, interpretator_closure_functions_init);
 }
 
-Tree *interpretator_tree;
+Tree            *interpretator_tree   ;
 struct ListNode *interpretator_next_op;
-RunData *data;
+RunData         *data                 ;
 
 void run(Tree *fun)
 {
-    Function *f=fun->root->data;
+    Function *f;
+
+    f=fun->root->data;
+
     interpretator_table_init();
     interpretator_return_place=stack_init();
     push(interpretator_return_place, 0);
@@ -146,5 +154,28 @@ void run(Tree *fun)
 
         if(interpretator_next_op==0)
             interpretator_next_op=pop(interpretator_return_place);
+    }
+}
+
+void pure_run(Tree *fun)
+{
+    List *l;
+
+    l=get_fast_run(fun->root->data);
+    interpretator_table_init();
+    interpretator_tree=fun;
+    interpretator_next_op=l->begin;
+
+    interpretator_stack=malloc(STACK_LENGTH);
+    interpretator_stack_head=interpretator_stack;
+
+    tree_print(fun, interpretator_closure_functions_init);
+
+    NodeStack *cur_pos;
+
+    while(interpretator_next_op)
+    {
+        data=(RunData*)interpretator_next_op->data;
+        interpretator_table[data->type]();
     }
 }

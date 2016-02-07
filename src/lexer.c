@@ -11,6 +11,7 @@ String *lexer_out_data;
 
 void lexer_strcpy(char *s);
 void lexer_memcpy(void *data, int sz);
+void copy_data_token(String *tok);
 
 Function *lexer_constants;
 
@@ -39,6 +40,7 @@ static void lexer_print_args(List *args)
     printf(")");
 }
 
+void lexer_print_functions(Tree *tree);
 int lexer_braces_count=0;
 
 static void lexer_print_functions_node(Function *function)
@@ -81,25 +83,25 @@ char is_symbol(char c)
 String *get_word()
 {
     String *ret_alloc=str_init("");
-
+/*
     while(buf->length>0 && is_symbol(buf->end->data))
         str_push(ret_alloc, str_pop(buf));
-
+*/
     return ret_alloc;
 }
 
 char *get_number()
 {
     String *ret_alloc=str_init("");
-
+/*
     while(buf->length>0 && is_number(buf->end->data))
         str_push(ret_alloc, str_pop(buf));
-
+*/
     return ret_alloc;
 }
 
 void skip()
-{
+{/*
     while(1)
     {
         if(buf->length==0)
@@ -114,7 +116,7 @@ void skip()
         default: return;
         }
         str_pop(buf);
-    }
+    }*/
 }
 
 void new_assembler_var(String *name)
@@ -176,7 +178,7 @@ Type *new_tree_data(char *name, char *data, char type)
 }
 
 void get_pointers(String *name_ptrs, Function *cur_function, Stack *stack_functions)
-{
+{/*
     String *register_0v=str_init("0v"),
            *token_empty=str_init(""),
            *register_0c=str_init("0c"),
@@ -190,6 +192,7 @@ void get_pointers(String *name_ptrs, Function *cur_function, Stack *stack_functi
     Type *expr;
 
     skip();
+
     if(buf->end==0 || buf->end->data!='{')
     {
         printf("line %d: excepted '{'", line);
@@ -259,9 +262,9 @@ ptrs_get_z:
                     goto ptrs_get_z;
                 }
                 break;*/
-            }
-        }
-    }
+            //}
+        //}
+    //}
 
     str_pop(buf);
     printf("\n\n");
@@ -341,6 +344,7 @@ void init_constants_and_registers(String *data, Function *cur_function)
 
 void copy_data_token(String *tok)
 {
+    /*
     struct StringNode *i=tok->begin;
 
     while(i)
@@ -348,7 +352,7 @@ void copy_data_token(String *tok)
         str_push_back(lexer_out_data, i->data);
         i=i->next;
     }
-    str_push_back(lexer_out_data, '\0');
+    str_push_back(lexer_out_data, '\0');*/
 }
 
 String *lexer(char *name)
@@ -438,14 +442,14 @@ String *lexer(char *name)
 
             str_push_back(lexer_out_data, FUNCTION);
             copy_data_token(tmp);
-
+/*
             skip();
             if(buf->end==0 || buf->end->data!='(')
             {
                 printf("%d :excepted (\n", line);
                 return 0;
             }
-            str_pop(buf);
+            str_pop(buf);*/
 
 get_args:
             skip();
@@ -469,7 +473,7 @@ get_args:
                     printf("\n");
                     return 0;
                 }
-
+/*
                 skip();
                 if(buf->end && buf->end->data==',')
                 {
@@ -481,7 +485,7 @@ get_args:
                 {
                     printf("%d: excepted )\n", line);
                     return 0;
-                }
+                }*/
             }
 
             str_pop(buf);
@@ -506,7 +510,7 @@ get_var:
 
             add_type(cur_function, 0, tmp, INTEGER);
             copy_data_token(tmp);
-
+/*
             skip();
             if(buf->end && buf->end->data=='=')
             {
@@ -519,7 +523,7 @@ get_var:
             {
                 str_pop(buf);
                 goto get_var;
-            }
+            }*/
         }
         else if(str_comparision(tmp, token_const)==0)
         {
@@ -544,7 +548,7 @@ get_const:
             str_push_back(lexer_out_data, '\0');
 
             skip();
-
+/*
             if(buf->end && buf->end->data=='=')
             {
                 str_pop(buf);
@@ -573,7 +577,7 @@ get_const:
             {
                 str_pop(buf);
                 goto get_const;
-            }
+            }*/
         }
         else if(str_comparision(tmp, token_element)==0)
         {
@@ -592,7 +596,7 @@ get_element:
             add_type(cur_function, 0, tmp, ELEMENT);
 
             copy_data_token(tmp);
-
+/*
             skip();
             if(buf->end && buf->end->data=='=')
             {
@@ -657,7 +661,7 @@ get_element:
             {
                 str_pop(buf);
                 goto get_element;
-            }
+            }*/
         }
         else if(str_comparision(tmp, token_pointers)==0)
         {
@@ -675,7 +679,7 @@ get_pointer:
 
             add_type(cur_function, 0, tmp, PTRS);
             copy_data_token(tmp);
-
+/*
             skip();
             if(buf->end && buf->end->data=='=')
             {
@@ -692,7 +696,7 @@ get_pointer:
             {
                 str_pop(buf);
                 goto get_pointer;
-            }
+            }*/
         }
         else if(str_comparision(tmp, token_while)==0)
         {
@@ -708,7 +712,7 @@ get_pointer:
             str_push_back(lexer_out_data, '0');
             str_push_back(lexer_out_data, '\0');
 
-            str_push_back(lexer_out_data, EQ);
+            //str_push_back(lexer_out_data, EQ);
             copy_data_token(expr1->name);
             copy_data_token(expr1->name);
 
@@ -735,7 +739,7 @@ get_pointer:
         {
 get_print:
             skip();
-
+/*
             if(buf->end && buf->end->data=='"')
             {
                 str_pop(buf);
@@ -892,7 +896,7 @@ get_print:
                     printf("%d: expected '='\n", line);
                     return 0;
                 }
-            }
+            }*/
         }
     }
 

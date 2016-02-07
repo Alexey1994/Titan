@@ -1,51 +1,54 @@
 #ifndef PARSER_OPERATIONS_H_INCLUDED
 #define PARSER_OPERATIONS_H_INCLUDED
 
-char parser_error();
+typedef char try;
 
-char parser_putc();
+try parser_error();
 
-char parser_element_init();
-char parser_ptrs_init();
-char parser_array_init();
-char parser_var_init();
-char parser_const_init();
-char parser_const_string_init();
+try parser_putc();
 
-char parser_assignment();
-char parser_loop();
-char parser_if();
+try parser_element_init();
+try parser_ptrs_init();
+try parser_array_init();
+try parser_integer_init();
+try parser_real_init();
+try parser_const_init();
+try parser_const_string_init();
 
-char parser_break();
-char parser_continue();
-char parser_function();
+try parser_assignment();
+try parser_loop();
+try parser_if();
 
-char parser_end();
-char parser_call();
+try parser_break();
+try parser_continue();
+try parser_function();
 
-char parser_inc();
-char parser_dec();
+try parser_end();
+try parser_call();
 
-char parser_add();
-char parser_sub();
-char parser_mul();
-char parser_div();
+try parser_inc();
+try parser_dec();
 
-char parser_shr();
-char parser_shl();
+try parser_add();
+try parser_sub();
+try parser_mul();
+try parser_div();
 
-char parser_xor();
-char parser_and();
-char parser_or();
-char parser_not();
+try parser_shr();
+try parser_shl();
 
-char parser_eq();
-char parser_neq();
-char parser_gt();
-char parser_lt();
-char parser_ge();
-char parser_le();
+try parser_xor();
+try parser_and();
+try parser_or();
+try parser_not();
 
-char parser_alloc();
+try parser_eq();
+try parser_neq();
+try parser_gt();
+try parser_lt();
+try parser_ge();
+try parser_le();
+
+try parser_alloc();
 
 #endif // PARSER_OPERATIONS_H_INCLUDED

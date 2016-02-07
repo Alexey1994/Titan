@@ -11,6 +11,8 @@
 #include "time.h"
 #include "C.h"
 
+#include "make_PE.h"
+
 char debug=0, disasm=0;
 
 void free_test()
@@ -31,10 +33,10 @@ void free_test()
                  ASSIGNMENT, 'm',0, '0',0,
                  ASSIGNMENT, 'e',0, 'e',0,
 
-                 PUTC, 'n',0,
+                 PRINT, 'n',0,
 
                  LOOP,
-                    EQ, 't',0, 'm',0, 'n',0,
+                    //EQ, 't',0, 'm',0, 'n',0,
                     IF, 't',0,
                         BREAK,
                     END,
@@ -53,7 +55,7 @@ void free_test()
                     END,
                  END,
 
-                 EQ, 't',0, 'm',0, 'n',0,
+                 //EQ, 't',0, 'm',0, 'n',0,
 
                  CALL, 'a',0
                 };
@@ -92,15 +94,15 @@ void power_test()
                  ASSIGNMENT, 'v',0, 's',0,
 
                  LOOP,
-                    EQ, 'v',0, 't',0, 'i',0,
+                    //EQ, 'v',0, 't',0, 'i',0,
                     INC, 'i',0,
                     IF, 'v',0,
                         BREAK,
-                        PUTC, 'v',0,
+                        PRINT, 'v',0,
                     END,
                  END,
 
-                 PUTC, 'i',0
+                 PRINT, 'i',0
                 };
     size_data=sizeof(data);
 
@@ -136,13 +138,13 @@ void if_test()
                  ASSIGNMENT, 's',0, 'c',0,
 
                  IF, 's',0,
-                    PUTC, 'c',0,
+                    PRINT, 'c',0,
                  END,
 
                  LOOP,
                     BREAK,
                     CONTINUE,
-                    PUTC, 's',0,
+                    PRINT, 's',0,
                  END,
 
 /*
@@ -193,7 +195,7 @@ void c_test()
 
                  INC, 's',0,
                  MUL, 's',0, 's',0, 's',0,
-                 PUTC, 's',0
+                 PRINT, 's',0
                 };
     size_data=sizeof(data);
 
@@ -228,7 +230,7 @@ void functions_test()
                     //CONST_INIT, '0',0, 0,0,0,0,
                     ASSIGNMENT, '0','b',0, '1',0,
 
-                    PUTC, '0','b',0,
+                    PRINT, '0','b',0,
                  END
                 };
     size_data=sizeof(data);
@@ -253,15 +255,52 @@ void functions_test()
 void arifmetic_test()
 {
     Tree *tree=0;
-
+    FILE *f=fopen("bytecode.app", "wb");
     interpretator_table_init();
 
     char data[]={
+                INT_INIT, 'i',0,
+
+                FUNCTION, 'f',0, 1,0,0,0,
+                    INT_INIT, 'i',0,
+                END,
+
+                ASSIGNMENT, 'i',0, 'i',0, 'f',0, 'i',0, ADD, 0,
+
+        /*
                  CONST_INIT, 'c',0, 1,0,0,0,
                  INT_INIT, 's',0,
                  CONST_STRING_INIT, 'q',0, 2,0,0,0, 'a','l',
 
-                 ASSIGNMENT, 's',0, 'c',0,
+                 LOOP,
+                    LOOP,
+                        ASSIGNMENT, 's',0, 'c',0,
+                        LOOP,
+                            ASSIGNMENT, 's',0, 'c',0,
+                            BREAK,
+                        END,
+
+                        BREAK,
+                    END,
+                    ASSIGNMENT, 's',0, 's',0,
+                    BREAK,
+                 END,
+
+                 INT_INIT, 'x',0,
+                 INT_INIT, 'y',0,
+                 INT_INIT, 'z',0,
+
+                 IF, IZ, 'x',0, IZ, 'x',0, AND, 0, //if(!x)
+                 END,
+*/
+/*
+                 IF, INZ, 'x',0, 0, //if(x)
+                 END,
+
+                 IF, IGT, 'x',0, 'y',0, 0, //if(x>y)
+                 END,*/
+
+                 //ASSIGNMENT, 's',0, 's',0,
 /*
                  ADD, 's',0, 's',0, 's',0,
                  MUL, 's',0, 's',0, 's',0,
@@ -284,22 +323,23 @@ void arifmetic_test()
                  GT, 's',0, 's',0, 's',0,
                  LE, 's',0, 's',0, 's',0,
                  GE, 's',0, 's',0, 's',0,*/
-
+/*
                  FUNCTION, 'f',0, 2,0,0,0,
                     INT_INIT, 'a',0,
                     INT_INIT, 'b',0,
-                    PUTC, 'a',0,
-                    /*
-                    INT_INIT, 'b',0,
-                    INT_INIT, 'i',0,
-                    CONST_INIT, 'c',0, 1,0,0,0,
-                    ASSIGNMENT, 'i',0, 's',0,
-                    ADD, 'i',0, 'i',0, 'i',0,*/
 
-                    //CALL, 'f',0,
+                    PUTC, 'a',0,
+                    PUTC, 'b',0,
                  END,
 
                  CALL, 'f',0, 's',0, 's',0,
+*/
+/*
+                 REAL_INIT, 'r',0,
+                 ASSIGNMENT, 'r',0, 'c',0,
+                 PUTC, 'r',0,
+                 ADD, 's',0, 'r',0, 'r',0,
+                 PUTC, 's',0*/
                 };
     size_data=sizeof(data);
 
@@ -309,15 +349,20 @@ void arifmetic_test()
 
     int g;
     for(g=size_data-1; g>=0; g--)
+    {
+        fputc(data[g], f);
         str_push(s, data[g]);
+    }
     tree=parse(s);
 
     printf("\ninterpretator:\n\n");
 
     if(tree)
-        run(tree);
+        pure_run(tree);
+        //run(tree);
     else
         printf("error");
+    fclose(f);
 }
 
 int main()

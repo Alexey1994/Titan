@@ -22,12 +22,13 @@ void parser_table_init()
     for(i=0; i<256; i++)
         parser_table[i]=parser_error;
 
-    parser_table[PUTC]=parser_putc;
+    parser_table[PRINT]=parser_putc;
 
     parser_table[ELEMENT_INIT]=parser_element_init;
     parser_table[PTRS_INIT]=parser_ptrs_init;
     parser_table[ARRAY_INIT]=parser_array_init;
-    parser_table[INT_INIT]=parser_var_init;
+    parser_table[INT_INIT]=parser_integer_init;
+    parser_table[REAL_INIT]=parser_real_init;
     parser_table[CONST_INIT]=parser_const_init;
     parser_table[CONST_STRING_INIT]=parser_const_string_init;
 
@@ -58,13 +59,6 @@ void parser_table_init()
     parser_table[OR]=parser_or;
     parser_table[NOT]=parser_not;
 
-    parser_table[EQ]=parser_eq;
-    parser_table[NEQ]=parser_neq;
-    parser_table[GT]=parser_gt;
-    parser_table[LT]=parser_lt;
-    parser_table[GE]=parser_ge;
-    parser_table[LE]=parser_le;
-
     parser_table[ALLOC]=parser_alloc;
 }
 
@@ -80,10 +74,10 @@ String *next_token(String *s)
         while(s->length)
         {
             t=str_pop(s);
-            if(t=='\0') break;
+            if(t=='\0')
+                break;
             str_push(ret, t);
         }
-
         return ret;
     }
     return 0;
@@ -138,7 +132,7 @@ Type *get_parser_op_all(String *s, Function *cur_function)
 
     if(op==0)
     {
-        printf("variable '"); str_print(new_string); printf("' not found\n");
+        //printf("variable '"); str_print(new_string); printf("' not found\n");
         str_free(new_string);
         return 0;
     }
@@ -360,13 +354,12 @@ Tree *parse(String *s)
     cur_function->length_args=0;
 
     parser_table_init();
+    parser_init_cond_table();
 
     while(s->length>0)
     {
-        char d=str_pop(s);
-        if(parser_table[d]()==ERROR)
+        if(parser_table[str_pop(s)]()==ERROR)
         {
-            printf("%d", d);
             parser_free_functions(fun);
             stack_free(stack_functions);
             return 0;

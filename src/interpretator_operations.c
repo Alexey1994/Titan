@@ -1,119 +1,156 @@
 #include "interpretator_operations.h"
+#include "interpretator_compiler.h"
 #include "parser.h"
+#include "interpretator.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 void interpretator_init_local_vars(Type *type);
 
-extern char *interpretator_stack;
-extern char *interpretator_stack_head;
+extern char        *interpretator_stack;
+extern char        *interpretator_stack_head;
 
-extern RunData *data;
-extern Tree *interpretator_tree;
+extern RunData     *data;
+extern Tree        *interpretator_tree;
 
-extern char loop_not_break;
-extern struct ListNode *interpretator_next_op;
-extern NodeStack *cur_loop;
+extern char         loop_not_break;
+extern struct       ListNode *interpretator_next_op;
+extern NodeStack   *cur_loop;
 
-extern Stack *interpretator_return_place;
+extern Stack       *interpretator_return_place;
 
-extern char debug;
+extern char         debug;
 
-Loop *loop_data;
-Increment *inc_data;
-Decrement *dec_data;
-Call *call_data;
-If *if_data;
+Loop               *loop_data;
+Increment          *inc_data;
+Decrement          *dec_data;
+Call               *call_data;
+If                 *if_data;
 
-Add *add_data;
-Sub *sub_data;
-Mul *mul_data;
-Div *div_data;
+Add                *add_data;
+Sub                *sub_data;
+Mul                *mul_data;
+Div                *div_data;
 
-ElementVar *el_var_data;
-ElementArray *el_arr_data;
-ElementConst *el_const_data;
+ElementVar         *el_var_data;
+ElementArray       *el_arr_data;
+ElementConst       *el_const_data;
 ElementConstString *el_const_string_data;
-ElementPtr *el_ptr_data;
-ElementElement *el_el_data;
+ElementPtr         *el_ptr_data;
+ElementElement     *el_el_data;
 
-VarElement *var_el_data;
-VarVar *var_var_data;
-VarArray *var_arr_data;
-VarConst *var_const_data;
-VarConstString *var_const_string_data;
-VarPtr *var_ptr_data;
+VarElement         *var_el_data;
+VarVar             *var_var_data;
+VarArray           *var_arr_data;
+VarConst           *var_const_data;
+VarConstString     *var_const_string_data;
+VarPtr             *var_ptr_data;
 
-ArrayElement *arr_el_data;
-ArrayVar *arr_var_data;
-ArrayArray *arr_arr_data;
-ArrayConst *arr_const_data;
-ArrayConstString *arr_const_string_data;
-ArrayPtr *arr_ptr_data;
+ArrayElement       *arr_el_data;
+ArrayVar           *arr_var_data;
+ArrayArray         *arr_arr_data;
+ArrayConst         *arr_const_data;
+ArrayConstString   *arr_const_string_data;
+ArrayPtr           *arr_ptr_data;
 
-PointerElement *ptr_el_data;
-PointerVar *ptr_var_data;
-PointerArray *ptr_arr_data;
-PointerConst *ptr_const_data;
+PointerElement     *ptr_el_data;
+PointerVar         *ptr_var_data;
+PointerArray       *ptr_arr_data;
+PointerConst       *ptr_const_data;
 PointerConstString *ptr_const_string_data;
-PointerPtr *ptr_ptr_data;
+PointerPtr         *ptr_ptr_data;
 
-ElementAlloc *el_alloc_data;
-ArrayAlloc *arr_alloc_data;
-PointersAlloc *ptrs_alloc;
+ElementAlloc       *el_alloc_data;
+ArrayAlloc         *arr_alloc_data;
+PointersAlloc      *ptrs_alloc;
 
-Equal *eq_data;
-NotEqual *neq_data;
-GreatherThan *gt_data;
-LesserThan *lt_data;
-GreatherThanOrEqual *ge_data;
-LesserThanOrEqual *le_data;
+Array              *arr_tmp;
+Const              *const_tmp;
 
-Array *arr_tmp;
-Const *const_tmp;
+Type               *putc_data;
 
-Type *putc_data;
+Number             *var;
+Const              *constant;
+Element            *element;
+ConstString        *const_string;
+Pointers           *ptrs;
 
-Number *var;
-Const *constant;
-Element *element;
-ConstString *const_string;
-Pointers *ptrs;
-
-void interpretator_loop()
+void interpretator_jmp()
 {
-    loop_data=(Loop*)data->data;
+    Jmp *jmp_data=data->data;
     if(debug)
-        printf("<loop>\n");
-
-    if(loop_data->eval->length)
-    {
-        if(loop_data->eval->end->next==0)
-            loop_data->eval->end->next=loop_data->eval->begin;
-        interpretator_next_op=loop_data->eval->begin;
-    }
+        printf("<JMP %d>\n", jmp_data->place);
+    interpretator_next_op=jmp_data->place;
 }
 
-void interpretator_if()
+void interpretator_jz()
 {
-    if_data=(If*)data->data;
+    Jz *jz_data=data->data;
 
     if(debug)
     {
-        printf("<if "); str_print(if_data->cond->name); printf("(%d)>\n", if_data->cond->data);
+        printf("<JZ ");
+        str_print(jz_data->var->name);
+        printf(" %d>\n", jz_data->place);
     }
 
-    if(if_data->cond->data && if_data->eval->length)
-        interpretator_next_op=if_data->eval->begin;
+    if(!(*(int*)jz_data->var->data))
+        interpretator_next_op=jz_data->place;
     else
         interpretator_next_op=interpretator_next_op->next;
+}
+
+void interpretator_jnz()
+{
+    Jnz *jnz_data=data->data;
+
+    if(debug)
+    {
+        printf("<JZ ");
+        str_print(jnz_data->var->name);
+        printf(" %d>\n", jnz_data->place);
+    }
+
+    if(*(int*)jnz_data->var->data)
+        interpretator_next_op=jnz_data->place;
+    else
+        interpretator_next_op=interpretator_next_op->next;
+}
+
+void interpretator_je()
+{
+
+}
+
+void interpretator_jne()
+{
+
+}
+
+void interpretator_jlt()
+{
+
+}
+
+void interpretator_jgt()
+{
+
+}
+
+void interpretator_jle()
+{
+
+}
+
+void interpretator_jge()
+{
+
 }
 
 void interpretator_break()
 {
     Break *break_data=data->data;
     interpretator_next_op=break_data->loop;
-    interpretator_next_op=interpretator_next_op->next;
 }
 
 void interpretator_continue()
@@ -122,11 +159,19 @@ void interpretator_continue()
     interpretator_next_op=continue_data->loop;
 }
 
+void update_args()
+{
+
+}
+
 void interpretator_call()
 {
-    struct ListNode *i, *j;
-    Number *num, *num2;
-    Type *type, *type2;
+    struct ListNode *i,
+                    *j;
+    Number          *num,
+                    *num2;
+    Type            *type,
+                    *type2;
 
     call_data=(Call*)data->data;
 
@@ -134,23 +179,21 @@ void interpretator_call()
     j=call_data->fun->args->begin;
     while(i)
     {
-        //j->data=i->data;
-
         type=j->data;
         type2=i->data;
 
         switch(type->type)
         {
-            case INTEGER:
+            case INTEGER: case REAL:
                 num=type->data;
-                //str_print(num->name);
-                //printf(" %d", *(int*)num->data);
 
                 switch(type2->type)
                 {
-                case INTEGER:
+                case INTEGER: case REAL:
                     num2=type2->data;
-                    num->data=num2->data;
+                    num->data=interpretator_stack_head;
+                    interpretator_stack_head+=BITS;
+                    *(int*)num->data=*(int*)num2->data;
                 }
 
                 break;
@@ -181,25 +224,32 @@ int print_ptrs_level=0;
 
 void interpretator_print(Type *putc_data)
 {
-    Number *var;
-    Const *constant;
-    Element *element;
+    Number      *var;
+    Const       *constant;
+    Element     *element;
     ConstString *const_string;
-    Pointers *ptrs, *ptrs_tmp;
-    Array *arr;
-    Type rekurse_putc_data;
+    Pointers    *ptrs,
+                *ptrs_tmp;
+    Array       *arr;
+    Type         rekurse_putc_data;
 
-    char *data=putc_data->data;
-    char type=putc_data->type;
-    int j,k;
+    char        *data=putc_data->data;
+    char         type=putc_data->type;
+    int          j,
+                 k;
 
     print_ptrs_level++;
 
     switch(type)
     {
+    case REAL:
+        var=data;
+        printf("%f", *(float*)var->data);
+        break;
+
     case INTEGER:
         var=data;
-        printf("%d", var->data);
+        printf("%d", *(int*)var->data);
         break;
 
     case CONST:
@@ -891,22 +941,7 @@ void interpretator_add()
     add_data=(Add*)data->data;
 
     int a, b, *c;
-/*
-    if(add_data->var_rez->is_closure)
-        c=add_data->var_rez->data;
-    else
-        c=&add_data->var_rez->data;
 
-    if(add_data->var1->is_closure)
-        a=*(int*)add_data->var1->data;
-    else
-        a=add_data->var1->data;
-
-    if(add_data->var2->is_closure)
-        b=*(int*)add_data->var2->data;
-    else
-        b=add_data->var2->data;
-*/
     c=add_data->var_rez->data;
     a=*(int*)add_data->var1->data;
     b=*(int*)add_data->var2->data;
@@ -959,6 +994,42 @@ void interpretator_div()
         str_print(div_data->var2->name); printf("=%d>\n", div_data->var_rez->data);
     }
     interpretator_next_op=interpretator_next_op->next;
+}
+
+void interpretator_fadd()
+{
+    add_data=(Add*)data->data;
+
+    float a, b, *c;
+
+    c=add_data->var_rez->data;
+    a=*(float*)add_data->var1->data;
+    b=*(float*)add_data->var2->data;
+    *c=a+b;
+
+    if(debug)
+    {
+        printf("<"); str_print(add_data->var_rez->name); printf("=");
+        str_print(add_data->var1->name); printf("+");
+        str_print(add_data->var2->name); printf("=%f>\n", *c);
+    }
+
+    interpretator_next_op=interpretator_next_op->next;
+}
+
+void interpretator_fsub()
+{
+
+}
+
+void interpretator_fmul()
+{
+
+}
+
+void interpretator_fdiv()
+{
+
 }
 
 void interpretator_shr()
@@ -1049,86 +1120,6 @@ void interpretator_not()
     {
         printf("<"); str_print(not_data->var_rez->name); printf("=!");
         str_print(not_data->var->name); printf("=%d>\n", not_data->var_rez->data);
-    }
-
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_eq()
-{
-    eq_data=(Equal*)data->data;
-
-    //((Equal*)data->data)->var->data=((Equal*)data->data)->left->data==((Equal*)data->data)->right->data;
-
-    eq_data->var->data=(int)eq_data->left->data==(int)eq_data->right->data;
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_neq()
-{
-    neq_data=(NotEqual*)data->data;
-
-    neq_data->var->data=(int)neq_data->left->data!=(int)neq_data->right->data;
-
-    if(debug)
-    {
-        printf("<a!=b %d>\n", neq_data->var->data);
-    }
-
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_gt()
-{
-    gt_data=(GreatherThan*)data->data;
-
-    gt_data->var->data=(int)gt_data->left->data > (int)gt_data->right->data;
-
-    if(debug)
-    {
-        printf("<a>b %d>\n", gt_data->var->data);
-    }
-
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_lt()
-{
-    lt_data=(LesserThan*)data->data;
-
-    lt_data->var->data=(int)lt_data->left->data < (int)lt_data->right->data;
-
-    if(debug)
-    {
-        printf("<a<b %d>\n", lt_data->var->data);
-    }
-
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_ge()
-{
-    ge_data=(GreatherThanOrEqual*)data->data;
-
-    ge_data->var->data=(int)ge_data->left->data >= (int)ge_data->right->data;
-
-    if(debug)
-    {
-        printf("<a>=b %d>\n", ge_data->var->data);
-    }
-
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_le()
-{
-    le_data=(LesserThanOrEqual*)data->data;
-
-    le_data->var->data=(int)le_data->left->data <= (int)le_data->right->data;
-
-    if(debug)
-    {
-        printf("<a<=b %d>\n", le_data->var->data);
     }
 
     interpretator_next_op=interpretator_next_op->next;

@@ -7,344 +7,363 @@
 #include "Id.h"
 #include "String.h"
 
+typedef char try;
+
 #define BITS 4
 
 /*комманды ассемблера*/
-#define PTRS_INIT 0x01
-#define ARRAY_INIT 0x02
-#define ELEMENT_INIT 0x03
-#define INT_INIT 0x04
-#define CONST_INIT 0x05
-#define CONST_STRING_INIT 0x51
-#define FUNCTION 0x06
-#define STREAM 0x07
+#define PTRS_INIT         0x01
+#define ARRAY_INIT        0x02
+#define ELEMENT_INIT      0x03
+#define INT_INIT          0x04
+#define REAL_INIT         0x05
+#define CONST_INIT        0x06
+#define CONST_STRING_INIT 0x07
+#define FUNCTION          0x08
+#define STREAM            0x09
 
-#define ELEMENT_INT 0x0c
-#define ELEMENT_ARRAY 0x0d
-#define ELEMENT_CONST 0x0e
-#define ELEMENT_PTR     0x0f
-#define ELEMENT_ELEMENT 0x10
-#define ELEMENT_CONST_STRING 0x52
+#define ELEMENT_INT          0x0a
+#define ELEMENT_ARRAY        0x0b
+#define ELEMENT_CONST        0x0c
+#define ELEMENT_PTR          0x0d
+#define ELEMENT_ELEMENT      0x0d
+#define ELEMENT_CONST_STRING 0x0e
 
-#define INT_INT 0x11
-#define INT_ARRAY 0x12
-#define INT_CONST 0x13
-#define INT_PTR     0x14
-#define INT_ELEMENT 0x15
-#define INT_CONST_STRING 0x53
+#define INT_INT          0x0f
+#define INT_ARRAY        0x10
+#define INT_CONST        0x11
+#define INT_PTR          0x12
+#define INT_ELEMENT      0x13
+#define INT_CONST_STRING 0x14
 
-#define ARRAY_INT 0x16
-#define ARRAY_ARRAY 0x17
-#define ARRAY_PTR   0x18
-#define ARRAY_CONST 0x19
-#define ARRAY_ELEMENT 0x1a
-#define ARRAY_CONST_STRING 0x54
+#define ARRAY_INT          0x15
+#define ARRAY_ARRAY        0x16
+#define ARRAY_PTR          0x17
+#define ARRAY_CONST        0x18
+#define ARRAY_ELEMENT      0x19
+#define ARRAY_CONST_STRING 0x1a
 
-#define PTR_INT 0x20
-#define PTR_ARRAY 0x21
-#define PTR_PTR   0x22
-#define PTR_CONST 0x23
-#define PTR_ELEMENT 0x24
-#define PTR_CONST_STRING 0x55
+#define PTR_INT          0x1b
+#define PTR_ARRAY        0x1c
+#define PTR_PTR          0x1d
+#define PTR_CONST        0x1e
+#define PTR_ELEMENT      0x1f
+#define PTR_CONST_STRING 0x20
 
-#define LOOP       0x26
-#define IF         0x27
+#define LOOP 0x21
+#define IF   0x22
 
-#define ASSIGNMENT 0x28
+#define IZ  0x01
+#define INZ 0x02
+#define IGT 0x03
+#define ILT 0x04
+#define IGE 0x05
+#define ILE 0x06
+#define IE  0x07
+#define INE 0x08
 
-#define INC 0x2a
-#define DEC 0x2b
+#define ASSIGNMENT 0x23
 
-#define MUL 0x2c
-#define DIV 0x2d
-#define MOD 0x2e
-#define ADD 0x2e
-#define SUB 0x2f
+#define INC 0x24
+#define DEC 0x25
 
-#define SHR 0x30
-#define SHL 0x31
+#define MUL 0x26
+#define DIV 0x27
+#define MOD 0x28
+#define ADD 0x29
+#define SUB 0x2a
 
-#define AND 0x32
-#define OR 0x33
-#define NOT 0x34
-#define XOR 0x35
+#define FMUL 0x2b
+#define FDIV 0x2c
+#define FADD 0x2d
+#define FSUB 0x2e
 
-#define CALL 0x36
-#define CALL_PTR_FUNCTION 0x37
+#define SHR 0x2f
+#define SHL 0x30
 
-#define END 0x38
+#define AND 0x31
+#define OR  0x32
+#define NOT 0x33
+#define XOR 0x34
 
-#define BREAK 0x39
-#define CONTINUE 0x3a
+#define CALL              0x35
+#define CALL_PTR_FUNCTION 0x36
 
-#define UNDEFINED 0x3b
+#define END 0x37
+
+#define BREAK    0x38
+#define CONTINUE 0x39
+
+#define UNDEFINED 0x3a
 //#define INTEGER  0x3c
 
-#define ALLOC 0x3d
+#define ALLOC 0x3b
 
-#define ARRAY_ALLOC 0x3e
-#define POINTERS_ALLOC 0x3f
-#define ELEMENT_ALLOC 0x46
+#define ARRAY_ALLOC    0x3c
+#define POINTERS_ALLOC 0x3d
+#define ELEMENT_ALLOC  0x3e
 
-#define EQ  0x40 // ==
-#define NEQ 0x41 // !=
-#define GT  0x42 // >
-#define LT  0x43 // <
-#define GE  0x44 // >=
-#define LE  0x45 // <=
-
-#define PUTC 0x7f
+#define PRINT 0x3f
 
 //типы, хранимы в дереве
-#define PTRS  0x01
-#define ARRAY 0x02
-#define ELEMENT 0x03
-#define INTEGER 0x04
-#define CONST 0x05
+#define PTRS         0x01
+#define ARRAY        0x02
+#define ELEMENT      0x03
+#define INTEGER      0x04
+#define CONST        0x05
 #define CONST_STRING 0x06
-/*
-typedef enum
-{
-    INTEGER=0x01,
-    FLOAT=0x02
-}VariableType;
-*/
+
+#define REAL 0x07
 
 typedef struct
 {
     String *name;
-    char *data;
-    int type;
+    char   *data;
+    int     type;
 }Type;
 
 typedef struct
 {
-    char type;
-    char uninitialized;
-    char is_closure;
-    char *data;
+    char    type;
+    char    uninitialized;
+    char    is_closure;
+    char   *data;
     String *name;
-    int count;
+    int     count;
 }Number;
 
 typedef struct
 {
-    char type;
+    char  type;
     char *data;
 }PointerData;
 
 typedef struct
 {
-    char uninitialized;
-    String *name;
-    PointerData *data;
-    int ilength;
-    int count;
+    char         uninitialized;
+    String      *name         ;
+    PointerData *data         ;
+    int          ilength      ;
+    int          count        ;
 }Pointers;
 
 typedef struct
 {
-    char uninitialized;
-    String *name;
-    char *data;
-    int isz, ilength;
-    int count;
+    char    uninitialized;
+    String *name         ;
+    char   *data         ;
+    int     isz          ,
+            ilength      ,
+            count        ;
 }Array;
 
 typedef struct
 {
-    char uninitialized;
-    String *name;
-    char *data;
-    int isz;
-    int count;
+    char    uninitialized;
+    String *name         ;
+    char   *data         ;
+    int     isz          ;
+    int     count        ;
 }Element;
 
 typedef struct
 {
-    char uninitialized;
-    String *name;
-    int data;
+    char    uninitialized;
+    String *name         ;
+    int     data         ;
 }Const;
 
 typedef struct
 {
-    char uninitialized;
-    String *name;
-    char *data;
-    int isz;
+    char    uninitialized;
+    String *name         ;
+    char   *data         ;
+    int     isz          ;
 }ConstString;
 
 typedef struct
 {
-    String *name;
-    Tree *types, *functions;
-    int length_args;
-    List *args;
-    List *body;
-    Stack *pos;
+    String *name       ;
+    Tree   *types      ,
+           *functions  ;
+    int     length_args;
+    List   *args       ;
+    List   *body       ;
+    Stack  *pos        ;
 }Function;
 
 typedef struct
 {
-    Element *el;
-    Number *in, *index;
+    Element *el   ;
+    Number  *in   ,
+            *index;
 }ElementVar;
 
 typedef struct
 {
-    Element *el;
-    Const *in;
-    Number *index;
+    Element *el   ;
+    Const   *in   ;
+    Number  *index;
 }ElementConst;
 
 typedef struct
 {
-    Element *el;
+    Element     *el;
     ConstString *in;
 }ElementConstString;
 
 typedef struct
 {
-    Element *el;
-    Number *index;
-    Array *arr;
+    Element *el   ;
+    Number  *index;
+    Array   *arr  ;
 }ElementArray;
 
 typedef struct
 {
-    Element *el;
-    Number *index;
-    Pointers *ptrs;
+    Element  *el   ;
+    Number   *index;
+    Pointers *ptrs ;
 }ElementPtr;
 
 typedef struct
 {
-    Element *el, *in;
+    Element *el,
+            *in;
 }ElementElement;
 
 typedef struct
 {
-    Number *var, *index;
-    Element *in;
+    Number  *var  ,
+            *index;
+    Element *in   ;
 }VarElement;
 
 typedef struct
 {
-    Number *var, *in;
+    Number *var,
+           *in ;
 }VarVar;
 
 typedef struct
 {
     Number *var;
-    Const *in;
+    Const  *in ;
 }VarConst;
 
 typedef struct
 {
-    Number *var;
-    ConstString *in;
+    Number      *var;
+    ConstString *in ;
 }VarConstString;
 
 typedef struct
 {
-    Number *var, *index;
-    Array *arr;
+    Number *var  ,
+           *index;
+    Array  *arr;
 }VarArray;
 
 typedef struct
 {
-    Number *var, *index;
-    Pointers *ptrs;
+    Number   *var  ,
+             *index;
+    Pointers *ptrs ;
 }VarPtr;
 
 
 typedef struct
 {
-    Element *in;
-    Number *index;
-    Array *arr;
+    Element *in   ;
+    Number  *index;
+    Array   *arr  ;
 }ArrayElement;
 
 typedef struct
 {
-    Number *var, *index;
-    Array *arr;
+    Number *var  ,
+           *index;
+    Array  *arr  ;
 }ArrayVar;
 
 typedef struct
 {
-    Array *arr;
+    Array  *arr  ;
     Number *index;
-    Const *in;
+    Const  *in   ;
 }ArrayConst;
 
 typedef struct
 {
-    Array *arr;
-    Number *index;
-    ConstString *in;
+    Array       *arr  ;
+    Number      *index;
+    ConstString *in   ;
 }ArrayConstString;
 
 typedef struct
 {
-    Number *index_in, *index;
-    Array *arr_in, *arr;
+    Number *index_in,
+           *index   ;
+    Array  *arr_in  ,
+           *arr     ;
 }ArrayArray;
 
 typedef struct
 {
-    Array *arr;
-    Number *index;
-    Pointers *ptrs;
+    Array    *arr  ;
+    Number   *index;
+    Pointers *ptrs ;
 }ArrayPtr;
 
 
 typedef struct
 {
-    Element *in;
-    Number *index;
-    Pointers *ptrs;
+    Element  *in   ;
+    Number   *index;
+    Pointers *ptrs ;
 }PointerElement;
 
 typedef struct
 {
-    Number *var, *index;
-    Pointers *ptrs;
+    Number   *var  ,
+             *index;
+    Pointers *ptrs ;
 }PointerVar;
 
 typedef struct
 {
-    Pointers *ptrs;
-    Number *index;
-    Const *in;
+    Pointers *ptrs ;
+    Number   *index;
+    Const    *in   ;
 }PointerConst;
 
 typedef struct
 {
-    Pointers *ptrs;
-    Number *index;
-    ConstString *in;
+    Pointers    *ptrs ;
+    Number      *index;
+    ConstString *in   ;
 }PointerConstString;
 
 typedef struct
 {
-    Number *index;
-    Array *arr;
-    Pointers *ptrs;
+    Number   *index;
+    Array    *arr  ;
+    Pointers *ptrs ;
 }PointerArray;
 
 typedef struct
 {
-    Pointers *ptrs_in, *ptrs;
-    Number *index_in, *index;
+    Pointers *ptrs_in ,
+             *ptrs    ;
+    Number   *index_in,
+             *index   ;
 }PointerPtr;
 
 
 typedef struct
 {
-    char type;
-    char *data;
+    char  type,
+         *data;
 }RunData;
 
 typedef struct
@@ -364,7 +383,7 @@ typedef struct
 
 typedef struct
 {
-    Number *cond;
+    List *cond;
     List *eval;
 }If;
 
@@ -380,107 +399,96 @@ typedef struct
 
 typedef struct
 {
-    Function *fun;
-    List *args;
+    Function *fun ;
+    List     *args;
 }Call;
 
 typedef struct
 {
-    Number *var1, *var2, *var_rez;
+    Number *var1,
+           *var2,
+           *var_rez;
 }Add;
 
 typedef struct
 {
-    Number *var1, *var2, *var_rez;
+    Number *var1,
+           *var2,
+           *var_rez;
 }Sub;
 
 typedef struct
 {
-    Number *var1, *var2, *var_rez;
+    Number *var1,
+           *var2,
+           *var_rez;
 }Mul;
 
 typedef struct
 {
-    Number *var1, *var2, *var_rez;
+    Number *var1,
+           *var2,
+           *var_rez;
 }Div;
 
 typedef struct
 {
-    Number *var1, *var2, *var_rez;
+    Number *var1,
+           *var2,
+           *var_rez;
 }And;
 
 typedef struct
 {
-    Number *var1, *var2, *var_rez;
+    Number *var1,
+           *var2,
+           *var_rez;
 }Or;
 
 typedef struct
 {
-    Number *var, *var_rez;
+    Number *var,
+           *var_rez;
 }Not;
 
 typedef struct
 {
-    Number *var1, *var2, *var_rez;
+    Number *var1,
+           *var2,
+           *var_rez;
 }Xor;
 
 typedef struct
 {
-    Number *var_rez, *var, *shift;
+    Number *var_rez,
+           *var,
+           *shift;
 }Shr;
 
 typedef struct
 {
-    Number *var_rez, *var, *shift;
+    Number *var_rez,
+           *var,
+           *shift;
 }Shl;
-
-
-typedef struct
-{
-    Number *left, *right, *var;
-}Equal;
-
-typedef struct
-{
-    Number *left, *right, *var;
-}NotEqual;
-
-typedef struct
-{
-    Number *left, *right, *var;
-}GreatherThan;
-
-typedef struct
-{
-    Number *left, *right, *var;
-}LesserThan;
-
-typedef struct
-{
-    Number *left, *right, *var;
-}GreatherThanOrEqual;
-
-typedef struct
-{
-    Number *left, *right, *var;
-}LesserThanOrEqual;
 
 typedef struct
 {
     Element *el;
-    Number *sz;
+    Number  *sz;
 }ElementAlloc;
 
 typedef struct
 {
-    Array *arr;
-    Number *sz, *length;
+    Array  *arr;
+    Number *sz,
+           *length;
 }ArrayAlloc;
 
 typedef struct
 {
     Pointers *ptrs;
-    Number *length;
+    Number   *length;
 }PointersAlloc;
 
 typedef struct
@@ -488,17 +496,69 @@ typedef struct
     Type *data;
 }Putc;
 
+typedef struct
+{
+    Number *var;
+}IfZero;
+
+typedef struct
+{
+    Number *var;
+}IfNotZero;
+
+typedef struct
+{
+    Number *var_l,
+           *var_r;
+}IfEqual;
+
+typedef struct
+{
+    Number *var_l,
+           *var_r;
+}IfNotEqual;
+
+typedef struct
+{
+    Number *var_l,
+           *var_r;
+}IfLesserTnan;
+
+typedef struct
+{
+    Number *var_l,
+           *var_r;
+}IfGreatherTnan;
+
+typedef struct
+{
+    Number *var_l,
+           *var_r;
+}IfLesserTnanOrEqual;
+
+typedef struct
+{
+    Number *var_l,
+           *var_r;
+}IfGreatherTnanOrEqual;
+
+typedef struct
+{
+    Type *left_operand;
+    List *expression;
+}Assignment;
+
 extern Id *id;
 
-Type *get_parser_op_all(String *s, Function *cur_function);
-char tree_contains(Function *cur_function, String *name);
-Type *find_type(Tree *types, String *name);
-Function *find_global_function(Function *cur_function, Tree *tree_cur_function, Stack *functions, String *s);
-Function* find_function(Tree *tree_cur_function, String *s);
-Type *find_global_type(Function *cur_function, Stack *functions, String *s);
+Type*     get_parser_op_all   (String *s, Function *cur_function);
+char      tree_contains       (Function *cur_function, String *name);
+Type*     find_type           (Tree *types, String *name);
+Function* find_global_function(Function *cur_function, Tree *tree_cur_function, Stack *functions, String *s);
+Function* find_function       (Tree *tree_cur_function, String *s);
+Type*     find_global_type    (Function *cur_function, Stack *functions, String *s);
 
-Tree *parse(String *s);
-String *next_token(String *s);
+Tree*   parse     (String *s);
+String* next_token(String *s);
 
 void add_type(Tree *types, char *data, String *name_data, int type);
 

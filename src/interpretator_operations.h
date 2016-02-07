@@ -1,8 +1,15 @@
 #ifndef INTERPRETATOR_OPERATIONS_H_INCLUDED
 #define INTERPRETATOR_OPERATIONS_H_INCLUDED
 
-void interpretator_loop();
-void interpretator_if();
+void interpretator_jmp();
+void interpretator_jz();
+void interpretator_jnz();
+void interpretator_je();
+void interpretator_jne();
+void interpretator_jlt();
+void interpretator_jgt();
+void interpretator_jle();
+void interpretator_jge();
 
 void interpretator_break();
 void interpretator_continue();
@@ -46,6 +53,11 @@ void interpretator_add();
 void interpretator_sub();
 void interpretator_mul();
 void interpretator_div();
+
+void interpretator_fadd();
+void interpretator_fsub();
+void interpretator_fmul();
+void interpretator_fdiv();
 
 void interpretator_shr();
 void interpretator_shl();

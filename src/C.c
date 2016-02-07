@@ -45,7 +45,7 @@ void c_table_init()
 
     c_table[CALL]=c_call;
 
-    c_table[PUTC]=c_putc;
+    c_table[PRINT]=c_putc;
 
     c_table[INT_INT]=c_var_var;
     c_table[INT_CONST]=c_var_const;
@@ -90,13 +90,6 @@ void c_table_init()
     c_table[AND]=c_and;
     c_table[OR]=c_or;
     c_table[NOT]=c_not;
-
-    c_table[EQ]=c_eq;
-    c_table[NEQ]=c_neq;
-    c_table[GT]=c_gt;
-    c_table[LT]=c_lt;
-    c_table[GE]=c_ge;
-    c_table[LE]=c_le;
 
     c_table[ELEMENT_ALLOC]=c_element_alloc;
     c_table[ARRAY_ALLOC]=c_array_alloc;

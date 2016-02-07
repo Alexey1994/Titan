@@ -20,9 +20,9 @@ void str_fprint(String *s)
                 fputc(i->data[k], c_file);
         else
             for(k=0; k<s->pos_end; k++)*/
-                fputc(i->data, c_file);
+                //fputc(i->data, c_file);
 
-        i=i->next;
+        //i=i->next;
     }
 }
 

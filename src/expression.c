@@ -408,10 +408,10 @@ Type* get_expression(Function *cur_function, Stack *stack_functions)
     Type *type;
 
     char is_gap=0;
-
+/*
     while(buf->end && is_expr)
     {
-        if(!is_integer && is_number(buf->end->data))
+        if(!is_integer && is_number(*(buf->end-1))
         {
             str_push(out, str_pop(buf));
 
@@ -523,6 +523,6 @@ Type* get_expression(Function *cur_function, Stack *stack_functions)
 
     if(debug)
         print_OPN(l);
-
+*/
     return calc_expression(l, cur_function, stack_functions);
 }
