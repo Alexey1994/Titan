@@ -5,7 +5,7 @@ typedef char try;
 
 try parser_error();
 
-try parser_putc();
+try parser_print();
 
 try parser_element_init();
 try parser_ptrs_init();
@@ -25,29 +25,6 @@ try parser_function();
 
 try parser_end();
 try parser_call();
-
-try parser_inc();
-try parser_dec();
-
-try parser_add();
-try parser_sub();
-try parser_mul();
-try parser_div();
-
-try parser_shr();
-try parser_shl();
-
-try parser_xor();
-try parser_and();
-try parser_or();
-try parser_not();
-
-try parser_eq();
-try parser_neq();
-try parser_gt();
-try parser_lt();
-try parser_ge();
-try parser_le();
 
 try parser_alloc();
 

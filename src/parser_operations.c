@@ -1,6 +1,7 @@
 #include "parser_operations.h"
 #include "parser.h"
 #include "parser_cmp.h"
+#include "parser_expression.h"
 #include "List.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,32 +10,24 @@ extern const char   ERROR,
                     OK;
 
 extern Stack       *stack_functions;
-extern RunData     *run_alloc, *run_tmp;
 extern Tree        *fun;
 extern Function    *cur_function,
                    *function_tmp;
 extern String      *new_string;
-extern Type        *type,
-                   *op1,
-                   *op2,
-                   *op3;
+
 extern String      *parser_string_code;
 extern char         debug,
                     disasm;
 
 int                 disasm_level=0;
 
-Putc               *putc_alloc;
-
 static Number      *var_alloc;
 static Const       *const_alloc;
 static Element     *element_alloc;
 static Pointers    *ptrs_alloc;
-static Array       *arr_alloc;
 static ConstString *const_string_alloc;
 
 ElementVar         *el_var_alloc;
-ElementArray       *el_arr_alloc;
 ElementConst       *el_const_alloc;
 ElementConstString *el_const_string_alloc;
 ElementPtr         *el_ptr_alloc;
@@ -42,21 +35,12 @@ ElementElement     *el_el_alloc;
 
 VarElement         *var_el_alloc;
 VarVar             *var_var_alloc;
-VarArray           *var_arr_alloc;
 VarConst           *var_const_alloc;
 VarConstString     *var_const_string_alloc;
 VarPtr             *var_ptr_alloc;
 
-ArrayElement       *arr_el_alloc;
-ArrayVar           *arr_var_alloc;
-ArrayArray         *arr_arr_alloc;
-ArrayConst         *arr_const_alloc;
-ArrayConstString   *arr_const_string_alloc;
-ArrayPtr           *arr_ptr_alloc;
-
 PointerElement     *ptr_el_alloc;
 PointerVar         *ptr_var_alloc;
-PointerArray       *ptr_arr_alloc;
 PointerConst       *ptr_const_alloc;
 PointerConstString *ptr_const_string_alloc;
 PointerPtr         *ptr_ptr_alloc;
@@ -70,51 +54,31 @@ If                 *if_alloc,
 
 Call               *call_alloc;
 
-Increment          *INC_alloc;
-Decrement          *DEC_alloc;
-
-Add                *add_alloc;
-Sub                *sub_alloc;
-Mul                *mul_alloc;
-Div                *div_alloc;
-
-Shr                *shr_alloc;
-Shl                *shl_alloc;
-
-Xor                *xor_alloc;
-And                *and_alloc;
-Or                 *or_alloc;
-Not                *not_alloc;
-
 ElementAlloc       *el_alloc_alloc;
-ArrayAlloc         *arr_alloc_alloc;
 PointersAlloc      *ptrs_alloc_alloc;
 
-static struct ListNode* add_body_element()
+static void add_body_element(Data *run_alloc)
 {
+    Data *run_tmp;
+
     if(cur_function->pos->begin)
     {
-        run_tmp=(RunData*)cur_function->pos->begin->data;
+        run_tmp=(Data*)cur_function->pos->begin->data;
         switch(run_tmp->type)
         {
         case LOOP:
             loop_tmp=(Loop*)run_tmp->data;
             list_push(loop_tmp->eval, (char*)run_alloc);
-            return loop_tmp->eval->end;
             break;
 
         case IF:
             if_tmp=(If*)run_tmp->data;
             list_push(if_tmp->eval, (char*)run_alloc);
-            return if_tmp->eval->end;
             break;
         }
     }
     else
-    {
         list_push(cur_function->body, (char*)run_alloc);
-        return cur_function->body->end;
-    }
 }
 
 try parser_error()
@@ -123,26 +87,28 @@ try parser_error()
     return ERROR;
 }
 
-try parser_putc()
+try parser_print()
 {
-    type=(Type*)get_parser_op_all(parser_string_code, cur_function);
-    if(type==0)
+    Type  *op;
+    Print *print_alloc;
+
+    op=(Type*)get_parser_op_all(parser_string_code, cur_function);
+    if(op==0)
     {
         str_free(new_string);
         return ERROR;
     }
 
-    putc_alloc=malloc(sizeof(Putc));
-    putc_alloc->data=type;
+    print_alloc=malloc(sizeof(Print));
+    print_alloc->data=op;
 
     if(disasm)
     {
         int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("PRINT "); str_print(type->name); printf("\n");
+        for(i=0; i<disasm_level; i++) printf("    "); printf("PRINT "); str_print(op->name); printf("\n");
     }
 
-    run_alloc=new_run_data(PRINT, (char*)putc_alloc);
-    add_body_element();
+    add_body_element(new_data(PRINT, (char*)print_alloc));
     return OK;
 }
 
@@ -182,7 +148,7 @@ try parser_function()
 try parser_element_init()
 {
     new_string=get_parser_init_name(parser_string_code, cur_function);
-    if(new_string==0)
+    if(!new_string)
     {
         str_free(new_string);
         return ERROR;
@@ -207,7 +173,7 @@ try parser_element_init()
 try parser_ptrs_init()
 {
     new_string=get_parser_init_name(parser_string_code, cur_function);
-    if(new_string==0)
+    if(!new_string)
     {
         str_free(new_string);
         return ERROR;
@@ -230,37 +196,10 @@ try parser_ptrs_init()
     return OK;
 }
 
-try parser_array_init()
-{
-    new_string=get_parser_init_name(parser_string_code, cur_function);
-    if(new_string==0)
-    {
-        str_free(new_string);
-        return ERROR;
-    }
-
-    arr_alloc=malloc(sizeof(Array));
-    arr_alloc->name=new_string;
-
-    arr_alloc->data=0;
-    arr_alloc->ilength=0;
-    arr_alloc->isz=0;
-    arr_alloc->uninitialized=1;
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("ARRAY_INIT "); str_print(new_string); printf("\n");
-    }
-
-    add_type(cur_function->types, (char*)arr_alloc, new_string, ARRAY);
-    return OK;
-}
-
 try parser_integer_init()
 {
     new_string=get_parser_init_name(parser_string_code, cur_function);
-    if(new_string==0)
+    if(!new_string)
     {
         str_free(new_string);
         return ERROR;
@@ -292,7 +231,7 @@ try parser_integer_init()
 try parser_real_init()
 {
     new_string=get_parser_init_name(parser_string_code, cur_function);
-    if(new_string==0)
+    if(!new_string)
     {
         str_free(new_string);
         return ERROR;
@@ -324,7 +263,7 @@ try parser_real_init()
 try parser_const_init()
 {
     new_string=get_parser_init_name(parser_string_code, cur_function);
-    if(new_string==0 || parser_string_code->length<BITS)
+    if(!new_string || parser_string_code->length<BITS)
     {
         str_free(new_string);
         return ERROR;
@@ -350,7 +289,7 @@ try parser_const_string_init()
     int j;
 
     new_string=get_parser_init_name(parser_string_code, cur_function);
-    if(new_string==0)
+    if(!new_string)
     {
         str_free(new_string);
         return ERROR;
@@ -382,7 +321,8 @@ try parser_const_string_init()
 try parser_assignment()
 {
     Assignment *assignment_data;
-    List *expression;
+    List       *expression;
+    Type       *op;
 
     if(disasm)
     {
@@ -390,55 +330,45 @@ try parser_assignment()
         for(i=0; i<disasm_level; i++) printf("    "); printf("ASSIGNMENT ");
     }
 
-    type=(Type*)get_parser_op_all(parser_string_code, cur_function);
-    if(type==0)
+    op=(Type*)get_parser_op_all(parser_string_code, cur_function);
+    if(op==0)
         return ERROR;
 
-    if(disasm)
+    switch(op->type)
     {
-        str_print(type->name);
-        printf("=");
+    case INTEGER: case REAL:
+        if(disasm)
+        {
+            str_print(op->name);
+            printf("=");
+        }
+
+        expression=get_parser_expression(parser_string_code, cur_function);
+        if(!expression)
+            return ERROR;
+        if(debug)
+        {
+            list_print(expression, parser_print_expression);
+            printf("\n");
+        }
+
+        assignment_data=malloc(sizeof(Assignment));
+        assignment_data->expression=expression;
+        assignment_data->left_operand=op;
     }
-
-    expression=get_parser_expression(parser_string_code, cur_function);
-    if(!expression)
-        return ERROR;
-
-    assignment_data=malloc(sizeof(Assignment));
-    assignment_data->expression=expression;
-    assignment_data->left_operand=type;
-
-/*
-    switch(type->type)
-    {
-    case INTEGER:
-
-        break;
-
-    case REAL:
-        break;
-
-    case ELEMENT:
-        break;
-
-    case PTRS:
-        break;
-    }
-*/
-
-    run_alloc=(RunData*)new_run_data(ASSIGNMENT, (char*)assignment_data);
-    add_body_element();
-    printf("\n");
+    add_body_element(new_data(ASSIGNMENT, (char*)assignment_data));
     return OK;
 }
 
 try parser_loop()
 {
+    Data *run_alloc;
+
     loop_alloc=malloc(sizeof(Loop));
     loop_alloc->eval=list_init();
-    run_alloc=(RunData*)new_run_data(LOOP, (char*)loop_alloc);
+    run_alloc=(Data*)new_data(LOOP, (char*)loop_alloc);
 
-    add_body_element();
+    add_body_element(run_alloc);
 
     if(disasm)
     {
@@ -453,6 +383,8 @@ try parser_loop()
 
 try parser_if()
 {
+    Data *run_alloc;
+
     if_alloc=malloc(sizeof(If));
 
     if_alloc->cond=list_init();
@@ -471,14 +403,33 @@ try parser_if()
     if(disasm)
         printf("\n");
 
-    run_alloc=(RunData*)new_run_data(IF, (char*)if_alloc);
-    add_body_element();
+    run_alloc=(Data*)new_data(IF, (char*)if_alloc);
+    add_body_element(run_alloc);
     push(cur_function->pos, (char*)run_alloc);
     return OK;
 }
 
+static char is_in_loop()
+{
+    NodeStack *i;
+
+    i=cur_function->pos->begin;
+    while(i)
+    {
+        if(((Data*)i->data)->type==LOOP)
+            return 1;
+        i=i->previouse;
+        printf("d");
+    }
+
+    return 0;
+}
+
 try parser_break()
 {
+    if(!is_in_loop())
+        return ERROR;
+
     break_alloc=malloc(sizeof(Break));
 
     if(disasm)
@@ -487,13 +438,15 @@ try parser_break()
         for(i=0; i<disasm_level;i++) printf("    "); printf("BREAK\n");
     }
 
-    run_alloc=(RunData*)new_run_data(BREAK, break_alloc);
-    break_alloc->loop=add_body_element();
+    add_body_element(new_data(BREAK, 0));
     return OK;
 }
 
 try parser_continue()
 {
+    if(!is_in_loop())
+        return ERROR;
+
     continue_alloc=malloc(sizeof(Continue));
 
     if(disasm)
@@ -502,8 +455,7 @@ try parser_continue()
         for(i=0; i<disasm_level;i++) printf("    "); printf("CONTINUE\n");
     }
 
-    run_alloc=(RunData*)new_run_data(CONTINUE, continue_alloc);
-    continue_alloc->loop=add_body_element();
+    add_body_element(new_data(CONTINUE, 0));
     return OK;
 }
 
@@ -539,7 +491,8 @@ try parser_end()
 
 try parser_call()
 {
-    int i;
+    Type *op;
+    int   i;
 
     if(cur_function->length_args)
     {
@@ -567,14 +520,14 @@ try parser_call()
     while(i)
     {
         new_string=next_token(parser_string_code);
-        type=find_global_type(cur_function, stack_functions, new_string);
-        if(type==0)
+        op=find_global_type(cur_function, stack_functions, new_string);
+        if(!op)
         {
             printf("argument '"); str_print(new_string); printf("' not found\n");
             str_free(new_string);
             return ERROR;
         }
-        list_push(call_alloc->args, type);
+        list_push(call_alloc->args, op);
         str_free(new_string);
         i--;
     }
@@ -585,406 +538,65 @@ try parser_call()
         str_print(call_alloc->fun->name); printf("\n");
     }
 
-    run_alloc=(RunData*)new_run_data(CALL, (char*)call_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_inc()
-{
-    type=(Type*)get_parser_op_all(parser_string_code, cur_function);
-    if(type==0)
-        return ERROR;
-
-    INC_alloc=malloc(sizeof(Increment));
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level;i++) printf("    "); printf("INC ");
-        str_print(type->name); printf("\n");
-    }
-
-    INC_alloc->var=(Number*)type->data;
-    run_alloc=(RunData*)new_run_data(INC, (char*)INC_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_dec()
-{
-    type=(Type*)get_parser_op_all(parser_string_code, cur_function);
-    if(type==0)
-        return ERROR;
-
-    DEC_alloc=malloc(sizeof(Increment));
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level;i++) printf("    "); printf("DEC ");
-        str_print(type->name); printf("\n");
-    }
-
-    DEC_alloc->var=(Number*)type->data;
-    run_alloc=(RunData*)new_run_data(DEC, (char*)DEC_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_get_3op()
-{
-    type=(Type*)get_parser_op_all(parser_string_code, cur_function);
-    if(type==0)
-        return ERROR;
-
-    op1=(Type*)get_parser_op_all(parser_string_code, cur_function);
-    if(op1==0)
-        return ERROR;
-
-    op2=(Type*)get_parser_op_all(parser_string_code, cur_function);
-    if(op2==0)
-        return ERROR;
-
-    return OK;
-}
-
-try parser_add()
-{
-    if(parser_get_3op()==ERROR)
-        return ERROR;
-
-    add_alloc=malloc(sizeof(Add));
-
-    add_alloc->var_rez=(Number*)type->data;
-    add_alloc->var1=(Number*)op1->data;
-    add_alloc->var2=(Number*)op2->data;
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("ADD ");
-        str_print(add_alloc->var_rez->name);
-        printf("=");
-        str_print(add_alloc->var1->name);
-        printf("+");
-        str_print(add_alloc->var2->name);
-        printf("\n");
-    }
-
-    if(add_alloc->var_rez->type==INTEGER)
-        run_alloc=(RunData*)new_run_data(ADD, (char*)add_alloc);
-    else
-        run_alloc=(RunData*)new_run_data(FADD, (char*)add_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_sub()
-{
-    if(parser_get_3op()==ERROR)
-        return ERROR;
-
-    sub_alloc=malloc(sizeof(Sub));
-
-    sub_alloc->var_rez=(Number*)type->data;
-    sub_alloc->var1=(Number*)op1->data;
-    sub_alloc->var2=(Number*)op2->data;
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("SUB ");
-        str_print(sub_alloc->var_rez->name);
-        printf("=");
-        str_print(sub_alloc->var1->name);
-        printf("-");
-        str_print(sub_alloc->var2->name);
-        printf("\n");
-    }
-
-    run_alloc=(RunData*)new_run_data(SUB, (char*)sub_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_mul()
-{
-    if(parser_get_3op()==ERROR)
-        return ERROR;
-
-    mul_alloc=malloc(sizeof(Mul));
-
-    mul_alloc->var_rez=(Number*)type->data;
-    mul_alloc->var1=(Number*)op1->data;
-    mul_alloc->var2=(Number*)op2->data;
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("MUL ");
-        str_print(mul_alloc->var_rez->name);
-        printf("=");
-        str_print(mul_alloc->var1->name);
-        printf("*");
-        str_print(mul_alloc->var2->name);
-        printf("\n");
-    }
-
-    run_alloc=(RunData*)new_run_data(MUL, (char*)mul_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_div()
-{
-    if(parser_get_3op()==ERROR)
-        return ERROR;
-
-    div_alloc=malloc(sizeof(Div));
-
-    div_alloc->var_rez=(Number*)type->data;
-    div_alloc->var1=(Number*)op1->data;
-    div_alloc->var2=(Number*)op2->data;
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("DIV ");
-        str_print(div_alloc->var_rez->name);
-        printf("=");
-        str_print(div_alloc->var1->name);
-        printf("/");
-        str_print(div_alloc->var2->name);
-        printf("\n");
-    }
-
-    run_alloc=(RunData*)new_run_data(DIV, (char*)div_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_shr()
-{
-    if(parser_get_3op()==ERROR)
-        return ERROR;
-
-    shr_alloc=malloc(sizeof(Shr));
-
-    shr_alloc->var_rez=(Number*)type->data;
-    shr_alloc->var=(Number*)op1->data;
-    shr_alloc->shift=(Number*)op2->data;
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("SHR ");
-        str_print(shr_alloc->var_rez->name);
-        printf("=");
-        str_print(shr_alloc->var->name);
-        printf(">>");
-        str_print(shr_alloc->shift->name);
-        printf("\n");
-    }
-
-    run_alloc=(RunData*)new_run_data(SHR, (char*)shr_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_shl()
-{
-    if(parser_get_3op()==ERROR)
-        return ERROR;
-
-    shl_alloc=malloc(sizeof(Shl));
-
-    shl_alloc->var_rez=(Number*)type->data;
-    shl_alloc->var=(Number*)op1->data;
-    shl_alloc->shift=(Number*)op2->data;
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("SHL ");
-        str_print(shl_alloc->var_rez->name);
-        printf("=");
-        str_print(shl_alloc->var->name);
-        printf("<<");
-        str_print(shl_alloc->shift->name);
-        printf("\n");
-    }
-
-    run_alloc=(RunData*)new_run_data(SHL, (char*)shl_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_xor()
-{
-    if(parser_get_3op()==ERROR)
-        return ERROR;
-
-    xor_alloc=malloc(sizeof(Xor));
-
-    xor_alloc->var_rez=(Number*)type->data;
-    xor_alloc->var1=(Number*)op1->data;
-    xor_alloc->var2=(Number*)op2->data;
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("XOR ");
-        str_print(xor_alloc->var_rez->name);
-        printf("=");
-        str_print(xor_alloc->var1->name);
-        printf("^");
-        str_print(xor_alloc->var2->name);
-        printf("\n");
-    }
-
-    run_alloc=(RunData*)new_run_data(XOR, (char*)xor_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_and()
-{
-    if(parser_get_3op()==ERROR)
-        return ERROR;
-
-    and_alloc=malloc(sizeof(And));
-
-    and_alloc->var_rez=(Number*)type->data;
-    and_alloc->var1=(Number*)op1->data;
-    and_alloc->var2=(Number*)op2->data;
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("AND ");
-        str_print(and_alloc->var_rez->name);
-        printf("=");
-        str_print(and_alloc->var1->name);
-        printf("&");
-        str_print(and_alloc->var2->name);
-        printf("\n");
-    }
-
-    run_alloc=(RunData*)new_run_data(AND, (char*)and_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_or()
-{
-    if(parser_get_3op()==ERROR)
-        return ERROR;
-
-    or_alloc=malloc(sizeof(Or));
-
-    or_alloc->var_rez=(Number*)type->data;
-    or_alloc->var1=(Number*)op1->data;
-    or_alloc->var2=(Number*)op2->data;
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("OR ");
-        str_print(or_alloc->var_rez->name);
-        printf("=");
-        str_print(or_alloc->var1->name);
-        printf("|");
-        str_print(or_alloc->var2->name);
-        printf("\n");
-    }
-
-    run_alloc=(RunData*)new_run_data(OR, (char*)or_alloc);
-    add_body_element();
-    return OK;
-}
-
-try parser_not()
-{
-    type=(Type*)get_parser_op_all(parser_string_code, cur_function);
-    if(type==0)
-        return ERROR;
-
-    op1=(Type*)get_parser_op_all(parser_string_code, cur_function);
-    if(op1==0)
-        return ERROR;
-
-    not_alloc=malloc(sizeof(Not));
-
-    not_alloc->var_rez=(Number*)type->data;
-    not_alloc->var=(Number*)op1->data;
-
-    if(disasm)
-    {
-        int i;
-        for(i=0; i<disasm_level; i++) printf("    "); printf("OR ");
-        str_print(not_alloc->var_rez->name);
-        printf("=!");
-        str_print(not_alloc->var_rez->name);
-        printf("\n");
-    }
-
-    run_alloc=(RunData*)new_run_data(NOT, (char*)not_alloc);
-    add_body_element();
+    add_body_element(new_data(CALL, (char*)call_alloc));
     return OK;
 }
 
 try parser_alloc()
 {
-    type=(Type*)get_parser_op_all(parser_string_code, cur_function);
-    if(type==0)
+    Type    *op;
+    Data    *run_alloc;
+    List    *expression;
+
+    if(debug)
+        printf("ALLOC ");
+
+    op=(Type*)get_parser_op_all(parser_string_code, cur_function);
+    if(!op)
         return ERROR;
 
-    op1=(Type*)get_parser_op_all(parser_string_code, cur_function);
-    if(op1==0)
-        return ERROR;
+    if(debug)
+    {
+        str_print(op->name);
+        printf("=new ");
+    }
 
-    switch(type->type)
+    switch(op->type)
     {
     case ELEMENT:
         el_alloc_alloc=malloc(sizeof(ElementAlloc));
 
-        el_alloc_alloc->el=(Element*)type->data;
-        el_alloc_alloc->sz=(Number*)op1->data;
+        el_alloc_alloc->el=(Element*)op->data;
+        //el_alloc_alloc->sz=(Number*)op2->data;
 
-        run_alloc=(RunData*)new_run_data(ELEMENT_ALLOC, (char*)el_alloc_alloc);
-        break;
-
-    case ARRAY:
-        op2=(Type*)get_parser_op_all(parser_string_code, cur_function);
-        if(op2==0)
-            return ERROR;
-
-        arr_alloc_alloc=malloc(sizeof(ArrayAlloc));
-
-        arr_alloc_alloc->arr=(Array*)type->data;
-        arr_alloc_alloc->sz=(Number*)op1->data;
-        arr_alloc_alloc->length=(Number*)op2->data;
-        arr_alloc_alloc->arr->uninitialized=0;
-
-        run_alloc=(RunData*)new_run_data(ARRAY_ALLOC, (char*)arr_alloc_alloc);
+        run_alloc=(Data*)new_data(ELEMENT_ALLOC, (char*)el_alloc_alloc);
         break;
 
     case PTRS:
+        expression=get_parser_expression(parser_string_code, cur_function);
+        if(!expression)
+            return ERROR;
+        if(debug)
+        {
+            list_print(expression, parser_print_expression);
+            printf("\n");
+        }
+
         ptrs_alloc_alloc=malloc(sizeof(PointersAlloc));
 
-        ptrs_alloc_alloc->ptrs=(Pointers*)type->data;
-        ptrs_alloc_alloc->length=(Number*)op1->data;
+        ptrs_alloc_alloc->ptrs=(Pointers*)op->data;
+
+        //ptrs_alloc_alloc->length=(Number*)op2->data;
         ptrs_alloc_alloc->ptrs->uninitialized=0;
 
-        run_alloc=(RunData*)new_run_data(POINTERS_ALLOC, (char*)ptrs_alloc_alloc);
+        run_alloc=(Data*)new_data(POINTERS_ALLOC, (char*)ptrs_alloc_alloc);
         break;
 
     default:
-        printf("ALLOC only for PTRS,ARRAY,ELEMENT\n");
+        printf("ALLOC only for PTRS and ELEMENT\n");
         return ERROR;
     }
 
-    add_body_element();
+    add_body_element(run_alloc);
     return OK;
 }

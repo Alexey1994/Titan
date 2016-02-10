@@ -3,7 +3,7 @@
 #include "parser.h"
 #include <stdio.h>
 
-extern RunData *c_data;
+extern Data *c_data;
 
 extern FILE *c_file;
 
@@ -53,8 +53,8 @@ void c_call()
 
 void c_putc()
 {
-    Putc *putc_data=(Putc*)c_data->data;
-    Type *data=putc_data->data;
+    Print *print_data=(Print*)c_data->data;
+    Type *data=print_data->data;
 
     Number *var;
 

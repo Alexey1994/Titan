@@ -22,7 +22,6 @@ void free_test()
                  INT_INIT, 'n',0,
                  INT_INIT, 'm',0,
                  INT_INIT, 't',0,
-                 ARRAY_INIT, 'g',0,
                  ELEMENT_INIT, 'e',0,
                  PTRS_INIT, 'p',0,
                  CONST_STRING_INIT, 'z',0, 3,0,0,0, 't','l','l',
@@ -260,29 +259,68 @@ void arifmetic_test()
 
     char data[]={
                 INT_INIT, 'i',0,
+                INT_INIT, 'j',0,
+                PTRS_INIT, 'p',0,
 
-                FUNCTION, 'f',0, 1,0,0,0,
+                ALLOC, 'p',0, 'i',0, 'j',0, ADD, 0,
+
+                FUNCTION, 'f',0, 2,0,0,0,
                     INT_INIT, 'i',0,
+                    INT_INIT, 'j',0,
                 END,
 
-                ASSIGNMENT, 'i',0, 'i',0, 'f',0, 'i',0, ADD, 0,
+                FUNCTION, 'g',0, 2,0,0,0,
+                    INT_INIT, 'i',0,
+                    INT_INIT, 'j',0,
+                END,
 
-        /*
+                FUNCTION, 'h',0, 0,0,0,0,
+                END,
+
+               // ASSIGNMENT, 'i',0, 'i',0, 'f',0, 'i',0, ADD, 0,
+
+               ASSIGNMENT, 'i',0,
+                                'i',0,
+                                'f',0,
+                                    'j',0,
+                                     0,
+
+                                    'g',0,
+                                        'i',0, 0,
+                                        'i',0, 'i',0, ADD, 0,
+                                     0,
+
+                                 ADD,
+                                 0,
+                ASSIGNMENT, 'i',0, 'i',0, 0,
+                ASSIGNMENT, 'i',0, 'h',0, 0,
+
+/*
+                ASSIGNMENT, 'i',0,
+                                'i',0,
+                                'f',0,
+                                    'j',0, 0,
+                                    'i',0, 0,
+                                 0,
+                                 ADD,
+                                 0,*/
+
+/*
                  CONST_INIT, 'c',0, 1,0,0,0,
                  INT_INIT, 's',0,
                  CONST_STRING_INIT, 'q',0, 2,0,0,0, 'a','l',
 
                  LOOP,
                     LOOP,
-                        ASSIGNMENT, 's',0, 'c',0,
+                        //ASSIGNMENT, 's',0, 'c',0,
                         LOOP,
-                            ASSIGNMENT, 's',0, 'c',0,
+                            //ASSIGNMENT, 's',0, 'c',0,
                             BREAK,
                         END,
 
                         BREAK,
                     END,
-                    ASSIGNMENT, 's',0, 's',0,
+                    //ASSIGNMENT, 's',0, 's',0,
                     BREAK,
                  END,
 
@@ -290,9 +328,9 @@ void arifmetic_test()
                  INT_INIT, 'y',0,
                  INT_INIT, 'z',0,
 
-                 IF, IZ, 'x',0, IZ, 'x',0, AND, 0, //if(!x)
-                 END,
-*/
+                 //IF, IZ, 'x',0, IZ, 'x',0, AND, 0, //if(!x)
+                 //END,
+
 /*
                  IF, INZ, 'x',0, 0, //if(x)
                  END,

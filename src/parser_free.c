@@ -4,7 +4,7 @@
 #include "List.h"
 #include <stdlib.h>
 
-static void parser_free_function_body(RunData *data)
+static void parser_free_function_body(Data *data)
 {
     switch(data->type)
     {

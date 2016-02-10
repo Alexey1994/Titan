@@ -10,7 +10,7 @@ void interpretator_init_local_vars(Type *type);
 extern char        *interpretator_stack;
 extern char        *interpretator_stack_head;
 
-extern RunData     *data;
+extern Data        *data;
 extern Tree        *interpretator_tree;
 
 extern char         loop_not_break;
@@ -33,7 +33,6 @@ Mul                *mul_data;
 Div                *div_data;
 
 ElementVar         *el_var_data;
-ElementArray       *el_arr_data;
 ElementConst       *el_const_data;
 ElementConstString *el_const_string_data;
 ElementPtr         *el_ptr_data;
@@ -41,30 +40,19 @@ ElementElement     *el_el_data;
 
 VarElement         *var_el_data;
 VarVar             *var_var_data;
-VarArray           *var_arr_data;
 VarConst           *var_const_data;
 VarConstString     *var_const_string_data;
 VarPtr             *var_ptr_data;
 
-ArrayElement       *arr_el_data;
-ArrayVar           *arr_var_data;
-ArrayArray         *arr_arr_data;
-ArrayConst         *arr_const_data;
-ArrayConstString   *arr_const_string_data;
-ArrayPtr           *arr_ptr_data;
-
 PointerElement     *ptr_el_data;
 PointerVar         *ptr_var_data;
-PointerArray       *ptr_arr_data;
 PointerConst       *ptr_const_data;
 PointerConstString *ptr_const_string_data;
 PointerPtr         *ptr_ptr_data;
 
 ElementAlloc       *el_alloc_data;
-ArrayAlloc         *arr_alloc_data;
 PointersAlloc      *ptrs_alloc;
 
-Array              *arr_tmp;
 Const              *const_tmp;
 
 Type               *putc_data;
@@ -230,7 +218,6 @@ void interpretator_print(Type *putc_data)
     ConstString *const_string;
     Pointers    *ptrs,
                 *ptrs_tmp;
-    Array       *arr;
     Type         rekurse_putc_data;
 
     char        *data=putc_data->data;
@@ -326,27 +313,6 @@ void interpretator_print(Type *putc_data)
         }
         break;
 
-    case ARRAY:
-        arr=data;
-        if(arr->uninitialized)
-        {
-            printf("undefined\n");
-        }
-        else
-        {
-            printf("[");
-            for(j=0; j<arr->ilength-1; j++)
-            {
-                for(k=0; k<arr->isz; k++)
-                    printf("%c",arr->data[j*arr->isz+k]);
-                printf(", ");
-            }
-            for(k=0; k<arr->isz; k++)
-                printf("%c",arr->data[(arr->ilength-1)*arr->isz+k]);
-            printf("]");
-        }
-        break;
-
     case PTRS:
         ptrs=data;
         if(ptrs->uninitialized)
@@ -439,7 +405,7 @@ void interpretator_print(Type *putc_data)
 
 void interpretator_putc()
 {
-    interpretator_print(((Putc*)data->data)->data);
+    interpretator_print(((Print*)data->data)->data);
     interpretator_next_op=interpretator_next_op->next;
 }
 
@@ -518,34 +484,6 @@ void interpretator_var_ptrs()
     if(debug)
     {
         printf("<%s=%s[%d] %d>\n", var_ptr_data->var->name, var_ptr_data->ptrs->name, var_ptr_data->index->data, var_ptr_data->var->data);
-    }
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_var_array()
-{
-    int j;
-    var_arr_data=(VarArray*)data->data;
-
-    if(var_arr_data->index->data>=var_arr_data->arr->ilength)
-    {
-        printf("\nvihod za granici massiva\n");
-        return 0;
-    }
-
-    if(var_arr_data->arr->isz>=BITS)
-        for(j=0; j<BITS; j++)
-            ((char*)&var_arr_data->var->data)[j]=(var_arr_data->arr->data+(int)var_arr_data->arr->isz*(int)var_arr_data->index->data)[j];
-    else
-    {
-        for(j=0; j<(int)var_arr_data->arr->isz; j++)
-            ((char*)&var_arr_data->var->data)[j]=*(var_arr_data->arr->data+(int)var_arr_data->arr->isz*(int)var_arr_data->index->data+j);
-        for(; j<BITS; j++)
-            ((char*)&var_arr_data->var->data)[j]=0;
-    }
-    if(debug)
-    {
-        printf("<%s=%s[%d] %d>\n", var_arr_data->var->name, var_arr_data->arr->name, var_arr_data->index->data, var_arr_data->var->data);
     }
     interpretator_next_op=interpretator_next_op->next;
 }
@@ -657,25 +595,6 @@ void interpretator_el_ptrs()
     interpretator_next_op=interpretator_next_op->next;
 }
 
-void interpretator_el_array()
-{
-    int j;
-
-    el_arr_data=(ElementArray*)data->data;
-
-    free(el_arr_data->el->data);
-    el_arr_data->el->isz=el_arr_data->arr->isz;
-    el_arr_data->el->data=(char*)malloc(el_arr_data->arr->isz);
-
-    for(j=0; j<el_arr_data->el->isz; j++)
-        el_arr_data->el->data[j]=el_arr_data->arr->data[el_arr_data->arr->isz*(int)el_arr_data->index->data+j];
-    if(debug)
-    {
-        printf("<element=array>\n");
-    }
-    interpretator_next_op=interpretator_next_op->next;
-}
-
 void interpretator_el_const_string()
 {
     int j;
@@ -759,157 +678,7 @@ void interpretator_ptrs_ptrs()
     interpretator_next_op=interpretator_next_op->next;
 }
 
-void interpretator_ptrs_array()
-{
-    ptr_arr_data=(PointerArray*)data->data;
-
-    if(ptr_arr_data->index->data>=ptr_arr_data->ptrs->ilength)
-    {
-        printf("vihod\n");
-        return 0;
-    }
-
-    ptr_arr_data->ptrs->data[(int)ptr_arr_data->index->data].data=(char*)ptr_arr_data->arr;
-    ptr_arr_data->ptrs->data[(int)ptr_arr_data->index->data].type=ARRAY;
-    interpretator_next_op=interpretator_next_op->next;
-}
-
 void interpretator_ptrs_const_string()
-{
-
-}
-
-void interpretator_array_var()
-{
-    int j;
-
-    arr_var_data=(ArrayVar*)data->data;
-
-    if(arr_var_data->arr->ilength<=arr_var_data->index->data)
-    {
-        printf("vihod\n");
-        return 0;
-    }
-
-    if(arr_var_data->arr->isz>BITS)
-    {
-        for(j=0; j<BITS; j++)
-            arr_var_data->arr->data[(int)arr_var_data->index->data * arr_var_data->arr->isz + j]=((char*)&arr_var_data->var->data)[j];
-        for(; j<arr_var_data->arr->isz; j++)
-            arr_var_data->arr->data[(int)arr_var_data->index->data * arr_var_data->arr->isz + j]=0;
-    }
-    else
-    {
-        for(j=0; j<arr_var_data->arr->isz; j++)
-            arr_var_data->arr->data[(int)arr_var_data->index->data * arr_var_data->arr->isz + j]=((char*)&arr_var_data->var->data)[j];
-    }
-    if(debug)
-    {
-        printf("<%s[%d]=%s %d>\n", arr_var_data->arr->name, arr_var_data->index->data, arr_var_data->var->name, arr_var_data->var->data);
-    }
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_array_const()
-{
-    int j;
-
-    arr_const_data=(ArrayConst*)data->data;
-
-    if(arr_const_data->index->data>=arr_const_data->arr->ilength)
-    {
-        printf("vihod\n");
-        return 0;
-    }
-
-    if(arr_const_data->arr->isz>=BITS)
-    {
-        for(j=0; j<BITS; j++)
-            arr_const_data->arr->data[(int)arr_const_data->index->data*arr_const_data->arr->isz+j]=(
-                (char*)&arr_const_data->in->data)[j];
-        for(; j<arr_const_data->arr->isz; j++)
-            arr_const_data->arr->data[(int)arr_const_data->index->data*arr_const_data->arr->isz+j]=0;
-    }
-    else
-    {
-        for(j=0; j<arr_const_data->arr->isz; j++)
-            arr_const_data->arr->data[(int)arr_const_data->index->data*arr_const_data->arr->isz+j]=((char*)&arr_const_data->in->data)[j];
-    }
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_array_el()
-{
-    int j;
-
-    arr_el_data=(ArrayElement*)data->data;
-
-    if(arr_el_data->arr->isz>=arr_el_data->in->isz)
-    {
-        for(j=0; j<arr_el_data->in->isz; j++)
-            arr_el_data->arr->data[(int)arr_el_data->index->data*arr_el_data->arr->isz+j]=arr_el_data->in->data[j];
-    }
-    else
-    {
-        for(j=0; j<arr_el_data->arr->isz; j++)
-            arr_el_data->arr->data[(int)arr_el_data->index->data*arr_el_data->arr->isz+j]=arr_el_data->in->data[j];
-    }
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_array_ptrs()
-{
-    arr_ptr_data=(ArrayPtr*)data->data;
-
-    if(arr_ptr_data->ptrs->data[(int)arr_ptr_data->index->data].type!=ARRAY)
-    {
-        printf("not Array\n");
-        return 0;
-    }
-
-    arr_tmp=(Array*)arr_ptr_data->ptrs->data[(int)arr_ptr_data->index->data].data;
-    arr_ptr_data->arr->data=arr_tmp->data;
-    arr_ptr_data->arr->ilength=arr_tmp->ilength;
-    arr_ptr_data->arr->isz=arr_tmp->isz;
-
-    if(debug)
-    {
-        printf("<%s=%s[%d]>\n", arr_ptr_data->arr->name, arr_ptr_data->ptrs->name, arr_ptr_data->index->data);
-    }
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_array_array()
-{
-    int j;
-
-    arr_arr_data=(ArrayArray*)data->data;
-
-    if(arr_arr_data->index->data>=arr_arr_data->arr->ilength || arr_arr_data->index_in->data>=arr_arr_data->arr_in->ilength)
-    {
-        printf("vihod\n");
-        return 0;
-    }
-
-    if(arr_arr_data->arr->isz>=arr_arr_data->arr_in->isz)
-    {
-        for(j=0; j<arr_arr_data->arr_in->isz; j++)
-            arr_arr_data->arr->data[arr_arr_data->arr->isz*(int)arr_arr_data->index->data+j]=arr_arr_data->arr_in->data[arr_arr_data->arr_in->isz*(int)arr_arr_data->index_in->data+j];
-    }
-    else
-    {
-        for(j=0; j<arr_arr_data->arr->isz; j++)
-            arr_arr_data->arr->data[arr_arr_data->arr->isz*(int)arr_arr_data->index->data+j]=arr_arr_data->arr_in->data[arr_arr_data->arr_in->isz*(int)arr_arr_data->index_in->data+j];
-    }
-
-    if(debug)
-    {
-        printf("<%s[%d]=%s[%d]>\n", arr_arr_data->arr->name, arr_arr_data->index->data, arr_arr_data->arr_in->name, arr_arr_data->index_in->data);
-    }
-    interpretator_next_op=interpretator_next_op->next;
-}
-
-void interpretator_array_const_string()
 {
 
 }
@@ -1142,26 +911,6 @@ void interpretator_element_alloc()
     interpretator_next_op=interpretator_next_op->next;
 }
 
-void interpretator_array_alloc()
-{
-    int j;
-
-    arr_alloc_data=(ArrayAlloc*)data->data;
-
-    arr_alloc_data->arr->isz=arr_alloc_data->sz->data;
-    arr_alloc_data->arr->ilength=arr_alloc_data->length->data;
-
-    if(debug)
-    {
-        printf("<alloc length %d size %d>\n", arr_alloc_data->length->data, arr_alloc_data->sz->data);
-    }
-
-    arr_alloc_data->arr->data=malloc((int)arr_alloc_data->sz->data * (int)arr_alloc_data->length->data);
-    for(j=0; j<(int)arr_alloc_data->sz->data * (int)arr_alloc_data->length->data; j++)
-        arr_alloc_data->arr->data[j]=1;
-    interpretator_next_op=interpretator_next_op->next;
-}
-
 void interpretator_pointers_alloc()
 {
     int j;
@@ -1170,7 +919,7 @@ void interpretator_pointers_alloc()
 
     ptrs_alloc->ptrs->ilength=ptrs_alloc->length->data;
 
-    ptrs_alloc->ptrs->data=malloc(sizeof(PointerData) * ptrs_alloc->ptrs->ilength);
+    ptrs_alloc->ptrs->data=malloc(sizeof(Data) * ptrs_alloc->ptrs->ilength);
     for(j=0; j<ptrs_alloc->ptrs->ilength; j++)
     {
         ptrs_alloc->ptrs->data[j].data=malloc(BITS);

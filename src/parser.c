@@ -22,11 +22,10 @@ void parser_table_init()
     for(i=0; i<256; i++)
         parser_table[i]=parser_error;
 
-    parser_table[PRINT]=parser_putc;
+    parser_table[PRINT]=parser_print;
 
     parser_table[ELEMENT_INIT]=parser_element_init;
     parser_table[PTRS_INIT]=parser_ptrs_init;
-    parser_table[ARRAY_INIT]=parser_array_init;
     parser_table[INT_INIT]=parser_integer_init;
     parser_table[REAL_INIT]=parser_real_init;
     parser_table[CONST_INIT]=parser_const_init;
@@ -42,22 +41,6 @@ void parser_table_init()
 
     parser_table[END]=parser_end;
     parser_table[CALL]=parser_call;
-
-    parser_table[INC]=parser_inc;
-    parser_table[DEC]=parser_dec;
-
-    parser_table[ADD]=parser_add;
-    parser_table[SUB]=parser_sub;
-    parser_table[MUL]=parser_mul;
-    parser_table[DIV]=parser_div;
-
-    parser_table[SHR]=parser_shr;
-    parser_table[SHL]=parser_shl;
-
-    parser_table[XOR]=parser_xor;
-    parser_table[AND]=parser_and;
-    parser_table[OR]=parser_or;
-    parser_table[NOT]=parser_not;
 
     parser_table[ALLOC]=parser_alloc;
 }
@@ -157,9 +140,11 @@ String *get_parser_init_name(String *s, Function *cur_function)
     return new_string;
 }
 
-RunData *new_run_data(char type, char *data)
+void new_run_data(){}
+
+Data *new_data(char type, char *data)
 {
-    RunData *ret=malloc(sizeof(RunData));
+    Data *ret=malloc(sizeof(Data));
 
     ret->data=data;
     ret->type=type;
@@ -334,7 +319,7 @@ char tree_contains(Function *cur_function, String *name)
     return 0;
 }
 
-RunData *run_alloc, *run_tmp;
+Data *run_alloc, *run_tmp;
 Tree *fun;
 
 Function *cur_function, *function_tmp;

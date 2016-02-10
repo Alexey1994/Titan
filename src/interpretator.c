@@ -43,29 +43,19 @@ void interpretator_table_init()
     interpretator_table[INT_CONST]=interpretator_var_const;
     interpretator_table[INT_ELEMENT]=interpretator_var_el;
     interpretator_table[INT_PTR]=interpretator_var_ptrs;
-    interpretator_table[INT_ARRAY]=interpretator_var_array;
     interpretator_table[INT_CONST_STRING]=interpretator_var_const_string;
 
     interpretator_table[ELEMENT_INT]=interpretator_el_var;
     interpretator_table[ELEMENT_CONST]=interpretator_el_const;
     interpretator_table[ELEMENT_ELEMENT]=interpretator_el_el;
     interpretator_table[ELEMENT_PTR]=interpretator_el_ptrs;
-    interpretator_table[ELEMENT_ARRAY]=interpretator_el_array;
     interpretator_table[ELEMENT_CONST_STRING]=interpretator_el_const_string;
 
     interpretator_table[PTR_INT]=interpretator_ptrs_var;
     interpretator_table[PTR_CONST]=interpretator_ptrs_const;
     interpretator_table[PTR_ELEMENT]=interpretator_ptrs_el;
     interpretator_table[PTR_PTR]=interpretator_ptrs_ptrs;
-    interpretator_table[PTR_ARRAY]=interpretator_ptrs_array;
     interpretator_table[PTR_CONST_STRING]=interpretator_ptrs_const_string;
-
-    interpretator_table[ARRAY_INT]=interpretator_array_var;
-    interpretator_table[ARRAY_ARRAY]=interpretator_array_const;
-    interpretator_table[ARRAY_ELEMENT]=interpretator_array_el;
-    interpretator_table[ARRAY_PTR]=interpretator_array_ptrs;
-    interpretator_table[ARRAY_ARRAY]=interpretator_array_array;
-    interpretator_table[ARRAY_CONST_STRING]=interpretator_array_const_string;
 
     interpretator_table[INC]=interpretator_inc;
     interpretator_table[DEC]=interpretator_dec;
@@ -89,7 +79,6 @@ void interpretator_table_init()
     interpretator_table[NOT]=interpretator_not;
 
     interpretator_table[ELEMENT_ALLOC]=interpretator_element_alloc;
-    interpretator_table[ARRAY_ALLOC]=interpretator_array_alloc;
     interpretator_table[POINTERS_ALLOC]=interpretator_pointers_alloc;
 }
 
@@ -125,7 +114,7 @@ static void interpretator_closure_functions_init(Function *function)
 
 Tree            *interpretator_tree   ;
 struct ListNode *interpretator_next_op;
-RunData         *data                 ;
+Data            *data                 ;
 
 void run(Tree *fun)
 {
@@ -149,7 +138,7 @@ void run(Tree *fun)
 
     while(interpretator_next_op)
     {
-        data=(RunData*)interpretator_next_op->data;
+        data=(Data*)interpretator_next_op->data;
         interpretator_table[data->type]();
 
         if(interpretator_next_op==0)
@@ -175,7 +164,7 @@ void pure_run(Tree *fun)
 
     while(interpretator_next_op)
     {
-        data=(RunData*)interpretator_next_op->data;
+        data=(Data*)interpretator_next_op->data;
         interpretator_table[data->type]();
     }
 }

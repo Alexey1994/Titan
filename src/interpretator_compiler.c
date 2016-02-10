@@ -26,7 +26,7 @@ static void add_loop()
     block_loop->end=malloc(sizeof(Jmp));
     block_loop->begin->place=ret->end;
     cur_loop=block_loop;
-    push(block, new_run_data(LOOP, cur_loop));
+    push(block, new_data(LOOP, cur_loop));
 }
 
 static void add_JZ(IfZero *iz)
@@ -34,15 +34,15 @@ static void add_JZ(IfZero *iz)
     Jz *alloc=malloc(sizeof(Jz));
     alloc->var=iz->var->data;
     list_push(if_places, &alloc->place);
-    list_push(ret, new_run_data(JZ, alloc));
+    list_push(ret, new_data(JZ, alloc));
 }
 
-static RunData* add_interpretator_cond(RunData *parser_cond)
+static Data* add_interpretator_cond(Data *parser_cond)
 {
-    RunData *alloc;
+    Data *alloc;
     Jz      *jz_data;
 
-    alloc=malloc(sizeof(RunData));
+    alloc=malloc(sizeof(Data));
 
     switch(parser_cond->type)
     {
@@ -52,7 +52,7 @@ static RunData* add_interpretator_cond(RunData *parser_cond)
     }
 }
 
-static void print_cond(RunData *run_data)
+static void print_cond(Data *run_data)
 {
     switch(run_data->type)
     {
@@ -70,7 +70,7 @@ static void add_if_refs(If *if_data)
 {
     struct ListNode *i;
     Stack           *s;
-    RunData         *run_data,
+    Data            *run_data,
                     *op1,
                     *op2;
 
@@ -129,17 +129,17 @@ static void add_if()
     BlockIf *block_if=malloc(sizeof(BlockIf));
     block_if->end=malloc(sizeof(Jmp));
     block_if->end->place=ret->end;
-    push(block, new_run_data(IF, block_if));
+    push(block, new_data(IF, block_if));
 }
 
 static void add_break()
 {
-    list_push(ret, new_run_data(JMP, cur_loop->end));
+    list_push(ret, new_data(JMP, cur_loop->end));
 }
 
 static void update_cur_loop()
 {
-    RunData *data;
+    Data *data;
     NodeStack *i=block->begin;
 
     cur_loop=0;
@@ -157,7 +157,7 @@ static void update_cur_loop()
 
 static void update_loop(BlockLoop *block_loop)
 {
-    list_push(ret, new_run_data(JMP, block_loop->begin));
+    list_push(ret, new_data(JMP, block_loop->begin));
     block_loop->end->place=ret->end;
     push(loops_not_updated_end, block_loop);
     update_cur_loop();
@@ -185,7 +185,7 @@ static void update_if(BlockIf *block_if)
 
 }
 
-static void add_run_element(RunData *run_data)
+static void add_run_element(Data *run_data)
 {
     switch(run_data->type)
     {
@@ -217,7 +217,7 @@ static void add_run_element(RunData *run_data)
     }
 }
 
-static void update_block(RunData *run_data)
+static void update_block(Data *run_data)
 {
     switch(run_data->type)
     {
@@ -233,7 +233,7 @@ static void update_block(RunData *run_data)
 
 List *get_fast_run(Function *main)
 {
-    RunData *run_data;
+    Data *run_data;
 
     if_places=list_init();
     ret=list_init();

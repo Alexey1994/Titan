@@ -84,6 +84,25 @@ void list_push(List *list, char *data)
     list->length++;
 }
 
+void list_push_front(List *list, char *data)
+{
+    struct ListNode *alloc;
+
+    alloc=malloc(sizeof(struct ListNode));
+
+    alloc->data=data;
+    alloc->previouse=0;
+    alloc->next=list->begin;
+
+    if(list->begin)
+        list->begin->previouse=alloc;
+    else
+        list->end=alloc;
+    list->begin=alloc;
+
+    list->length++;
+}
+
 char *list_pop(List *list)
 {
     struct ListNode *del=list->end;
@@ -96,8 +115,23 @@ char *list_pop(List *list)
     list->end->next=0;
 
     free(del);
-
+    list->length--;
     return data;
+}
+
+char *list_queue_pop(List *list)
+{
+    char            *ret;
+    struct ListNode *del;
+
+    del=list->begin;
+    ret=del->data;
+    list->begin=del->next;
+    list->begin->previouse=0;
+
+    free(del);
+
+    return ret;
 }
 
 void list_delete(List *list, int position)

@@ -23,7 +23,9 @@ void list_delete(List *list, int position);
 void list_insert(List *list, char *data, int position);
 
 void list_push(List *list, char *data);
+void list_push_front(List *list, char *data);
 char *list_pop(List *list);
+char *list_queue_pop(List *list);
 
 char* list_get(List *list, int position);
 

@@ -23,7 +23,7 @@ static char get_2_op()
     return OK;
 }
 
-static void free_cond_data(RunData *cond_data)
+static void free_cond_data(Data *cond_data)
 {
     if(cond_data->data)
         free(cond_data->data);
@@ -53,7 +53,7 @@ static char get_IZ(List *if_cond)
         str_print(op1->name);
     }
 
-    list_push(if_cond, new_run_data(IZ, alloc));
+    list_push(if_cond, new_data(IZ, alloc));
     return OK;
 }
 
@@ -68,7 +68,7 @@ static char get_INZ(List *if_cond)
     alloc=malloc(sizeof(IfNotZero));
     alloc->var=op1;
 
-    list_push(if_cond, new_run_data(INZ, alloc));
+    list_push(if_cond, new_data(INZ, alloc));
     return OK;
 }
 
@@ -83,7 +83,7 @@ static char get_IE(List *if_cond)
     alloc->var_l=op1;
     alloc->var_r=op2;
 
-    list_push(if_cond, new_run_data(IE, alloc));
+    list_push(if_cond, new_data(IE, alloc));
     return OK;
 }
 
@@ -98,7 +98,7 @@ static char get_INE(List *if_cond)
     alloc->var_l=op1;
     alloc->var_r=op2;
 
-    list_push(if_cond, new_run_data(INE, alloc));
+    list_push(if_cond, new_data(INE, alloc));
     return OK;
 }
 
@@ -113,7 +113,7 @@ static char get_ILT(List *if_cond)
     alloc->var_l=op1;
     alloc->var_r=op2;
 
-    list_push(if_cond, new_run_data(ILT, alloc));
+    list_push(if_cond, new_data(ILT, alloc));
     return OK;
 }
 
@@ -128,7 +128,7 @@ static char get_IGT(List *if_cond)
     alloc->var_l=op1;
     alloc->var_r=op2;
 
-    list_push(if_cond, new_run_data(IGT, alloc));
+    list_push(if_cond, new_data(IGT, alloc));
     return OK;
 }
 
@@ -143,7 +143,7 @@ static char get_ILE(List *if_cond)
     alloc->var_l=op1;
     alloc->var_r=op2;
 
-    list_push(if_cond, new_run_data(ILE, alloc));
+    list_push(if_cond, new_data(ILE, alloc));
     return OK;
 }
 
@@ -158,7 +158,7 @@ static char get_IGE(List *if_cond)
     alloc->var_l=op1;
     alloc->var_r=op2;
 
-    list_push(if_cond, new_run_data(IGE, alloc));
+    list_push(if_cond, new_data(IGE, alloc));
     return OK;
 }
 
@@ -166,7 +166,7 @@ static char get_OR(List *if_cond)
 {
     if(disasm)
         printf(" OR");
-    list_push(if_cond, new_run_data(OR, 0));
+    list_push(if_cond, new_data(OR, 0));
     return OK;
 }
 
@@ -174,7 +174,7 @@ static char get_AND(List *if_cond)
 {
     if(disasm)
         printf(" AND");
-    list_push(if_cond, new_run_data(AND, 0));
+    list_push(if_cond, new_data(AND, 0));
     return OK;
 }
 
@@ -202,7 +202,7 @@ void parser_init_cond_table()
 static char verify_OPN(List *opn)
 {
     struct ListNode *i=opn->begin;
-    RunData *run_data;
+    Data *run_data;
     Stack *s=stack_init();
 
     while(i)
