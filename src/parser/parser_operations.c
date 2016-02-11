@@ -2,7 +2,7 @@
 #include "parser.h"
 #include "parser_cmp.h"
 #include "parser_expression.h"
-#include "List.h"
+#include "../List.h"
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -1,9 +1,9 @@
 #include "expression.h"
-#include "parser.h"
-#include "List.h"
-#include "stack.h"
+#include "../parser/parser.h"
+#include "../List.h"
+#include "../stack.h"
 #include "lexer.h"
-#include "parser_cmp.h"
+#include "../parser/parser_cmp.h"
 #include <string.h>
 #include <stdlib.h>
 

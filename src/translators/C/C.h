@@ -1,7 +1,7 @@
 #ifndef C_INCLUDED
 #define C_INCLUDED
 
-#include "tree.h"
+#include "../../tree.h"
 
 void translate_C(Tree *functions);
 

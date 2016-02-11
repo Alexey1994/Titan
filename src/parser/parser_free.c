@@ -1,7 +1,7 @@
 #include "parser_free.h"
 #include "String.h"
 #include "parser.h"
-#include "List.h"
+#include "../List.h"
 #include <stdlib.h>
 
 static void parser_free_function_body(Data *data)

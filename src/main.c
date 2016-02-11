@@ -2,14 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "parser.h"
-#include "interpretator.h"
-#include "lexer.h"
-#include "expression.h"
+#include "parser/parser.h"
+#include "interpretator/interpretator.h"
+#include "lexer/lexer.h"
+#include "lexer/expression.h"
 #include "String.h"
-#include "parser_free.h"
+#include "parser/parser.h"
 #include "time.h"
-#include "C.h"
+#include "translators/C/C.h"
 
 #include "make_PE.h"
 

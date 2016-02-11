@@ -1,8 +1,8 @@
 #ifndef INTERPRETATOR_COMPILER_H_INCLUDED
 #define INTERPRETATOR_COMPILER_H_INCLUDED
 
-#include "parser.h"
-#include "List.h"
+#include "../parser/parser.h"
+#include "../List.h"
 
 #define JMP 0x78
 

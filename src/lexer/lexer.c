@@ -1,10 +1,10 @@
 #include "lexer.h"
-#include "tree.h"
-#include "parser.h"
+#include "../tree.h"
+#include "../parser/parser.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include "stack.h"
-#include "parser_cmp.h"
+#include "../stack.h"
+#include "../parser/parser_cmp.h"
 
 String *buf;
 String *lexer_out_data;

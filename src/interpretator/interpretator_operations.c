@@ -1,6 +1,6 @@
 #include "interpretator_operations.h"
 #include "interpretator_compiler.h"
-#include "parser.h"
+#include "../parser/parser.h"
 #include "interpretator.h"
 #include <stdio.h>
 #include <stdlib.h>

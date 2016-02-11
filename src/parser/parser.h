@@ -1,11 +1,11 @@
 #ifndef PARSER_H_INCLUDED
 #define PARSER_H_INCLUDED
 
-#include "stack.h"
-#include "List.h"
-#include "tree.h"
-#include "Id.h"
-#include "String.h"
+#include "../stack.h"
+#include "../List.h"
+#include "../tree.h"
+#include "../Id.h"
+#include "../String.h"
 
 typedef char try;
 

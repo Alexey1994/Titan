@@ -1,6 +1,6 @@
 #include "C_operations.h"
 #include "String.h"
-#include "parser.h"
+#include "../../parser/parser.h"
 #include <stdio.h>
 
 extern Data *c_data;

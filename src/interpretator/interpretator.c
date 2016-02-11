@@ -1,5 +1,5 @@
 #include "interpretator.h"
-#include "parser.h"
+#include "../parser/parser.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "String.h"

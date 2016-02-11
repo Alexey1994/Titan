@@ -1,8 +1,8 @@
 #ifndef LEXER_H_INCLUDED
 #define LEXER_H_INCLUDED
 
-#include "Id.h"
-#include "parser.h"
+#include "../Id.h"
+#include "../parser/parser.h"
 
 typedef struct
 {
